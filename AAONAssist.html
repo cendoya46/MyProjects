@@ -1,0 +1,1405 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AAONAssist — AAON Field Tool</title>
+<style>
+  :root {
+    --bg:        #1a2332;
+    --bg2:       #222f42;
+    --bg3:       #2d3d52;
+    --border:    #3a4f68;
+    --accent:    #E8621A;
+    --accent2:   #ff8c47;
+    --blue:      #4a9edd;
+    --text:      #e8edf3;
+    --text2:     #9bafc6;
+    --text3:     #6b84a0;
+    --green:     #3dba7a;
+    --yellow:    #f5c842;
+    --red:       #e84444;
+    --radius:    6px;
+    --mono:      'Courier New', Courier, monospace;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: var(--bg); color: var(--text); font-family: system-ui, -apple-system, sans-serif; font-size: 15px; min-height: 100vh; }
+
+  /* ── Header ── */
+  #header {
+    background: var(--bg2);
+    border-bottom: 2px solid var(--accent);
+    padding: 10px 16px;
+    display: flex; align-items: center; gap: 12px;
+    position: sticky; top: 0; z-index: 100;
+  }
+  #header .logo { font-size: 20px; font-weight: 700; letter-spacing: -0.5px; color: var(--text); }
+  #header .logo span { color: var(--accent); }
+  #header .tagline { font-size: 11px; color: var(--text3); text-transform: uppercase; letter-spacing: 1px; }
+  #header .version { margin-left: auto; font-size: 11px; color: var(--text3); font-family: var(--mono); }
+
+  /* ── Tabs ── */
+  #tabs {
+    display: flex; overflow-x: auto; background: var(--bg2);
+    border-bottom: 1px solid var(--border);
+    scrollbar-width: none;
+  }
+  #tabs::-webkit-scrollbar { display: none; }
+  .tab-btn {
+    flex: 0 0 auto; padding: 10px 16px;
+    background: none; border: none; color: var(--text2);
+    font-size: 13px; font-weight: 500; cursor: pointer;
+    border-bottom: 3px solid transparent;
+    transition: color 0.15s, border-color 0.15s;
+    white-space: nowrap;
+  }
+  .tab-btn:hover { color: var(--text); }
+  .tab-btn.active { color: var(--accent); border-bottom-color: var(--accent); }
+
+  /* ── Content ── */
+  .tab-panel { display: none; padding: 16px; max-width: 900px; margin: 0 auto; }
+  .tab-panel.active { display: block; }
+
+  /* ── Search bar ── */
+  .search-wrap { position: relative; margin-bottom: 14px; }
+  .search-wrap input {
+    width: 100%; padding: 10px 14px 10px 38px;
+    background: var(--bg3); border: 1px solid var(--border);
+    border-radius: var(--radius); color: var(--text); font-size: 14px;
+    outline: none;
+  }
+  .search-wrap input:focus { border-color: var(--accent); }
+  .search-wrap input::placeholder { color: var(--text3); }
+  .search-wrap .icon { position: absolute; left: 11px; top: 50%; transform: translateY(-50%); color: var(--text3); font-size: 16px; pointer-events: none; }
+
+  /* ── Filters ── */
+  .filter-row { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 14px; }
+  .filter-btn {
+    padding: 4px 10px; border-radius: 20px;
+    border: 1px solid var(--border); background: none;
+    color: var(--text2); font-size: 12px; cursor: pointer;
+    transition: all 0.15s;
+  }
+  .filter-btn:hover, .filter-btn.active {
+    background: var(--accent); border-color: var(--accent); color: white;
+  }
+
+  /* ── Cards ── */
+  .card {
+    background: var(--bg2); border: 1px solid var(--border);
+    border-radius: var(--radius); margin-bottom: 8px; overflow: hidden;
+  }
+  .card-header {
+    padding: 12px 14px; cursor: pointer;
+    display: flex; align-items: center; gap: 10px;
+    user-select: none;
+  }
+  .card-header:hover { background: var(--bg3); }
+  .severity-dot {
+    width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0;
+  }
+  .sev-critical .severity-dot { background: var(--red); box-shadow: 0 0 6px var(--red); }
+  .sev-warning  .severity-dot { background: var(--yellow); box-shadow: 0 0 6px var(--yellow); }
+  .sev-info     .severity-dot { background: var(--blue); box-shadow: 0 0 6px var(--blue); }
+  .code-badge {
+    font-family: var(--mono); font-size: 13px; font-weight: 700;
+    color: var(--accent); background: rgba(232,98,26,0.12);
+    padding: 2px 8px; border-radius: 4px; flex-shrink: 0;
+  }
+  .card-title { flex: 1; font-size: 14px; font-weight: 500; }
+  .card-series { font-size: 11px; color: var(--text3); font-family: var(--mono); }
+  .chevron { color: var(--text3); transition: transform 0.2s; font-size: 12px; }
+  .card.open .chevron { transform: rotate(90deg); }
+  .card-body {
+    display: none; padding: 14px; border-top: 1px solid var(--border);
+    background: var(--bg);
+  }
+  .card.open .card-body { display: block; }
+  .detail-section { margin-bottom: 12px; }
+  .detail-label { font-size: 11px; text-transform: uppercase; letter-spacing: 0.8px; color: var(--text3); margin-bottom: 4px; }
+  .detail-text { font-size: 13px; color: var(--text2); line-height: 1.6; }
+  .cause-list, .action-list { padding-left: 18px; }
+  .cause-list li, .action-list li { font-size: 13px; color: var(--text2); margin-bottom: 3px; line-height: 1.5; }
+  .action-list li { color: var(--green); }
+
+  /* ── Section headers ── */
+  .section-hdr {
+    font-size: 11px; text-transform: uppercase; letter-spacing: 1px;
+    color: var(--text3); margin: 16px 0 8px; padding-bottom: 6px;
+    border-bottom: 1px solid var(--border);
+  }
+
+  /* ── Calculators ── */
+  .calc-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  @media (max-width: 500px) { .calc-grid { grid-template-columns: 1fr; } }
+  .calc-field label { display: block; font-size: 12px; color: var(--text3); margin-bottom: 4px; }
+  .calc-field input, .calc-field select {
+    width: 100%; padding: 8px 10px;
+    background: var(--bg3); border: 1px solid var(--border);
+    border-radius: var(--radius); color: var(--text); font-size: 14px; outline: none;
+  }
+  .calc-field input:focus, .calc-field select:focus { border-color: var(--accent); }
+  .btn {
+    padding: 9px 18px; border-radius: var(--radius);
+    border: none; background: var(--accent); color: white;
+    font-size: 14px; font-weight: 600; cursor: pointer;
+    transition: background 0.15s;
+  }
+  .btn:hover { background: var(--accent2); }
+  .btn-outline {
+    background: none; border: 1px solid var(--accent); color: var(--accent);
+  }
+  .btn-outline:hover { background: var(--accent); color: white; }
+  .result-box {
+    background: var(--bg3); border: 1px solid var(--border);
+    border-radius: var(--radius); padding: 14px; margin-top: 12px;
+  }
+  .result-value { font-size: 28px; font-weight: 700; font-family: var(--mono); color: var(--accent); }
+  .result-label { font-size: 12px; color: var(--text3); margin-top: 2px; }
+  .result-note  { font-size: 12px; color: var(--text2); margin-top: 8px; line-height: 1.5; }
+
+  /* ── Checklist ── */
+  .checklist-item {
+    display: flex; align-items: flex-start; gap: 10px;
+    padding: 9px 0; border-bottom: 1px solid var(--border);
+  }
+  .checklist-item:last-child { border-bottom: none; }
+  .checklist-item input[type=checkbox] { margin-top: 2px; accent-color: var(--accent); width: 16px; height: 16px; flex-shrink: 0; cursor: pointer; }
+  .checklist-item label { font-size: 13px; color: var(--text2); cursor: pointer; line-height: 1.5; }
+  .checklist-item.checked label { text-decoration: line-through; color: var(--text3); }
+  .progress-bar { height: 4px; background: var(--bg3); border-radius: 2px; margin-bottom: 14px; overflow: hidden; }
+  .progress-fill { height: 100%; background: var(--green); border-radius: 2px; transition: width 0.3s; }
+  .progress-text { font-size: 12px; color: var(--text3); margin-bottom: 6px; }
+
+  /* ── Reference table ── */
+  .ref-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  .ref-table th { background: var(--bg3); color: var(--text2); padding: 8px 10px; text-align: left; font-size: 11px; text-transform: uppercase; letter-spacing: 0.6px; border-bottom: 1px solid var(--border); }
+  .ref-table td { padding: 8px 10px; border-bottom: 1px solid var(--border); color: var(--text2); vertical-align: top; }
+  .ref-table tr:hover td { background: var(--bg3); }
+  .ref-table .mono { font-family: var(--mono); color: var(--blue); }
+
+  /* ── Resources tab ── */
+  .resource-card {
+    background: var(--bg2); border: 1px solid var(--border);
+    border-radius: var(--radius); padding: 14px; margin-bottom: 10px;
+    display: flex; gap: 12px; align-items: flex-start;
+  }
+  .resource-icon { font-size: 24px; flex-shrink: 0; }
+  .resource-title { font-size: 14px; font-weight: 600; color: var(--text); margin-bottom: 3px; }
+  .resource-desc { font-size: 12px; color: var(--text2); line-height: 1.5; margin-bottom: 6px; }
+  .resource-link { font-size: 12px; color: var(--blue); word-break: break-all; }
+
+  /* ── Empty state ── */
+  .empty { text-align: center; padding: 40px 20px; color: var(--text3); }
+  .empty-icon { font-size: 36px; margin-bottom: 10px; }
+
+  /* ── Scrollable content ── */
+  .overflow-x { overflow-x: auto; }
+
+  /* ── Info banner ── */
+  .info-banner {
+    background: rgba(74,158,221,0.1); border: 1px solid rgba(74,158,221,0.3);
+    border-radius: var(--radius); padding: 10px 14px; margin-bottom: 14px;
+    font-size: 12px; color: var(--blue); line-height: 1.5;
+  }
+
+  /* ── Symptom tree ── */
+  .symptom-tree { margin-top: 10px; }
+  .symptom-node {
+    background: var(--bg2); border: 1px solid var(--border);
+    border-radius: var(--radius); padding: 12px 14px; margin-bottom: 8px;
+  }
+  .symptom-q { font-size: 14px; font-weight: 600; margin-bottom: 10px; color: var(--text); }
+  .symptom-opts { display: flex; flex-direction: column; gap: 6px; }
+  .symptom-opt {
+    padding: 8px 12px; background: var(--bg3); border: 1px solid var(--border);
+    border-radius: var(--radius); font-size: 13px; color: var(--text2);
+    cursor: pointer; transition: border-color 0.15s;
+  }
+  .symptom-opt:hover { border-color: var(--accent); color: var(--text); }
+  .symptom-result {
+    background: rgba(61,186,122,0.1); border: 1px solid rgba(61,186,122,0.3);
+    border-radius: var(--radius); padding: 14px; margin-top: 10px;
+  }
+  .symptom-result .res-title { font-weight: 600; color: var(--green); margin-bottom: 6px; }
+  .symptom-result .res-body { font-size: 13px; color: var(--text2); line-height: 1.6; }
+  .breadcrumb { font-size: 11px; color: var(--text3); margin-bottom: 12px; }
+
+  /* Utility */
+  .mt8 { margin-top: 8px; }
+  .mt12 { margin-top: 12px; }
+  .flex-end { display: flex; justify-content: flex-end; margin-top: 10px; gap: 8px; }
+  .tag { display: inline-block; font-size: 10px; padding: 1px 6px; border-radius: 3px; font-family: var(--mono); }
+  .tag-R4   { background: rgba(232,98,26,0.15); color: var(--accent); }
+  .tag-R410A{ background: rgba(74,158,221,0.15); color: var(--blue); }
+</style>
+</head>
+<body>
+
+<div id="header">
+  <div>
+    <div class="logo">AAON<span>Assist</span></div>
+    <div class="tagline">AAON Field Reference Tool</div>
+  </div>
+  <div class="version">v1.0</div>
+</div>
+
+<div id="tabs">
+  <button class="tab-btn active" onclick="showTab('faults',this)">⚡ Fault Codes</button>
+  <button class="tab-btn" onclick="showTab('diag',this)">🔍 Diagnostics</button>
+  <button class="tab-btn" onclick="showTab('controls',this)">🎛 Controls Ref</button>
+  <button class="tab-btn" onclick="showTab('calc',this)">🧮 Calculators</button>
+  <button class="tab-btn" onclick="showTab('commission',this)">✅ Commissioning</button>
+  <button class="tab-btn" onclick="showTab('resources',this)">📚 Resources</button>
+</div>
+
+<!-- ══════════════════════════════════════════
+     TAB 1 — FAULT CODES
+══════════════════════════════════════════ -->
+<div id="tab-faults" class="tab-panel active">
+  <div class="info-banner">Traffic-light severity: 🔴 Critical (lockout/shutdown) &nbsp;🟡 Warning (degraded) &nbsp;🔵 Info (status)</div>
+  <div class="search-wrap">
+    <span class="icon">🔎</span>
+    <input type="text" id="fault-search" placeholder="Search by code, description, or symptom…" oninput="filterFaults()">
+  </div>
+  <div class="filter-row" id="fault-series-filters">
+    <button class="filter-btn active" onclick="setFaultFilter('ALL',this)">All Series</button>
+    <button class="filter-btn" onclick="setFaultFilter('RQ',this)">RQ</button>
+    <button class="filter-btn" onclick="setFaultFilter('RN',this)">RN</button>
+    <button class="filter-btn" onclick="setFaultFilter('OH',this)">OH</button>
+    <button class="filter-btn" onclick="setFaultFilter('WH',this)">WH</button>
+    <button class="filter-btn" onclick="setFaultFilter('HA',this)">HA</button>
+    <button class="filter-btn" onclick="setFaultFilter('HB',this)">HB</button>
+    <button class="filter-btn" onclick="setFaultFilter('ALL',this)">LF</button>
+  </div>
+  <div id="fault-list"></div>
+</div>
+
+<!-- ══════════════════════════════════════════
+     TAB 2 — DIAGNOSTICS (Symptom Trees)
+══════════════════════════════════════════ -->
+<div id="tab-diag" class="tab-panel">
+  <p class="detail-text" style="margin-bottom:14px;">Select a symptom to walk through a guided troubleshooting tree.</p>
+  <div class="filter-row" id="diag-topics"></div>
+  <div id="diag-tree"></div>
+</div>
+
+<!-- ══════════════════════════════════════════
+     TAB 3 — CONTROLS REFERENCE
+══════════════════════════════════════════ -->
+<div id="tab-controls" class="tab-panel">
+  <div class="search-wrap">
+    <span class="icon">🔎</span>
+    <input type="text" id="ctrl-search" placeholder="Search point name, address, or description…" oninput="filterControls()">
+  </div>
+  <div class="filter-row">
+    <button class="filter-btn active" onclick="setCtrlFilter('ALL',this)">All</button>
+    <button class="filter-btn" onclick="setCtrlFilter('BACnet',this)">BACnet</button>
+    <button class="filter-btn" onclick="setCtrlFilter('Modbus',this)">Modbus</button>
+    <button class="filter-btn" onclick="setCtrlFilter('Setpoint',this)">Setpoints</button>
+    <button class="filter-btn" onclick="setCtrlFilter('Sensor',this)">Sensors</button>
+  </div>
+  <div class="overflow-x">
+    <table class="ref-table" id="ctrl-table">
+      <thead><tr><th>Point Name</th><th>Protocol</th><th>Address / Object</th><th>Type</th><th>Range / Values</th><th>Description</th></tr></thead>
+      <tbody id="ctrl-body"></tbody>
+    </table>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════
+     TAB 4 — CALCULATORS
+══════════════════════════════════════════ -->
+<div id="tab-calc" class="tab-panel">
+  <div class="filter-row">
+    <button class="filter-btn active" onclick="showCalc('superheat',this)">Superheat/Subcooling</button>
+    <button class="filter-btn" onclick="showCalc('airflow',this)">Airflow / CFM</button>
+    <button class="filter-btn" onclick="showCalc('fanlaw',this)">Fan Laws</button>
+    <button class="filter-btn" onclick="showCalc('refcharge',this)">Refrigerant Charge</button>
+    <button class="filter-btn" onclick="showCalc('sensible',this)">Sensible Heat</button>
+  </div>
+
+  <!-- Superheat / Subcooling -->
+  <div id="calc-superheat">
+    <div class="section-hdr">Superheat & Subcooling Calculator</div>
+    <div class="calc-grid">
+      <div class="calc-field">
+        <label>Refrigerant</label>
+        <select id="sh-ref">
+          <option value="R410A">R-410A</option>
+          <option value="R22">R-22</option>
+          <option value="R32">R-32</option>
+          <option value="R454B">R-454B</option>
+          <option value="R407C">R-407C</option>
+        </select>
+      </div>
+      <div class="calc-field">
+        <label>Suction Line Pressure (psig)</label>
+        <input type="number" id="sh-suction-psi" placeholder="e.g. 125">
+      </div>
+      <div class="calc-field">
+        <label>Suction Line Temp °F (at service port)</label>
+        <input type="number" id="sh-suction-temp" placeholder="e.g. 55">
+      </div>
+      <div class="calc-field">
+        <label>Liquid Line Pressure (psig)</label>
+        <input type="number" id="sh-liquid-psi" placeholder="e.g. 395">
+      </div>
+      <div class="calc-field">
+        <label>Liquid Line Temp °F</label>
+        <input type="number" id="sh-liquid-temp" placeholder="e.g. 95">
+      </div>
+    </div>
+    <div class="flex-end"><button class="btn" onclick="calcSuperheat()">Calculate</button></div>
+    <div id="sh-result"></div>
+  </div>
+
+  <!-- Airflow -->
+  <div id="calc-airflow" style="display:none">
+    <div class="section-hdr">Airflow / CFM Calculator</div>
+    <div class="filter-row">
+      <button class="filter-btn active" onclick="setAirflowMode('sp',this)">Static Pressure Method</button>
+      <button class="filter-btn" onclick="setAirflowMode('heat',this)">Heat Rise Method</button>
+    </div>
+    <div id="af-sp">
+      <div class="calc-grid">
+        <div class="calc-field"><label>Fan RPM</label><input type="number" id="af-rpm" placeholder="e.g. 1150"></div>
+        <div class="calc-field"><label>Motor HP</label><input type="number" id="af-hp" placeholder="e.g. 5" step="0.5"></div>
+        <div class="calc-field"><label>External Static Pressure (in. w.c.)</label><input type="number" id="af-esp" placeholder="e.g. 0.5" step="0.05"></div>
+        <div class="calc-field"><label>Design CFM (from nameplate)</label><input type="number" id="af-design-cfm" placeholder="e.g. 3000"></div>
+      </div>
+    </div>
+    <div id="af-heat" style="display:none">
+      <div class="calc-grid">
+        <div class="calc-field"><label>Supply Air Temp °F</label><input type="number" id="af-sat" placeholder="e.g. 55"></div>
+        <div class="calc-field"><label>Return Air Temp °F</label><input type="number" id="af-rat" placeholder="e.g. 75"></div>
+        <div class="calc-field"><label>Unit Capacity (BTU/hr)</label><input type="number" id="af-btu" placeholder="e.g. 120000"></div>
+      </div>
+      <p class="detail-text mt8" style="font-size:12px">CFM = BTU/hr ÷ (ΔT × 1.08)</p>
+    </div>
+    <div class="flex-end"><button class="btn" onclick="calcAirflow()">Calculate</button></div>
+    <div id="af-result"></div>
+  </div>
+
+  <!-- Fan Laws -->
+  <div id="calc-fanlaw" style="display:none">
+    <div class="section-hdr">Fan Law Calculator — Speed Change</div>
+    <p class="detail-text" style="margin-bottom:12px;font-size:13px">Use to predict new airflow, static, or power when fan speed changes.</p>
+    <div class="calc-grid">
+      <div class="calc-field"><label>Original RPM (N₁)</label><input type="number" id="fl-rpm1" placeholder="e.g. 1150"></div>
+      <div class="calc-field"><label>New RPM (N₂)</label><input type="number" id="fl-rpm2" placeholder="e.g. 1350"></div>
+      <div class="calc-field"><label>Original CFM (Q₁)</label><input type="number" id="fl-cfm1" placeholder="e.g. 3000"></div>
+      <div class="calc-field"><label>Original Static (P₁, in. w.c.)</label><input type="number" id="fl-sp1" placeholder="e.g. 0.50" step="0.01"></div>
+      <div class="calc-field"><label>Original BHP (W₁)</label><input type="number" id="fl-bhp1" placeholder="e.g. 2.5" step="0.1"></div>
+    </div>
+    <div class="flex-end"><button class="btn" onclick="calcFanLaw()">Calculate</button></div>
+    <div id="fl-result"></div>
+  </div>
+
+  <!-- Refrigerant Charge -->
+  <div id="calc-refcharge" style="display:none">
+    <div class="section-hdr">Refrigerant Charge Estimate</div>
+    <p class="detail-text" style="margin-bottom:12px;font-size:13px">Liquid line length correction for pre-charged AAON units.</p>
+    <div class="calc-grid">
+      <div class="calc-field"><label>Refrigerant</label>
+        <select id="rc-ref">
+          <option>R-410A</option><option>R-454B</option><option>R-22</option>
+        </select>
+      </div>
+      <div class="calc-field"><label>Liquid Line OD (in.)</label>
+        <select id="rc-llod">
+          <option value="0.375">3/8"</option>
+          <option value="0.5">1/2"</option>
+          <option value="0.625">5/8"</option>
+          <option value="0.75">3/4"</option>
+        </select>
+      </div>
+      <div class="calc-field"><label>Liquid Line Length (ft)</label><input type="number" id="rc-lllen" placeholder="e.g. 50"></div>
+      <div class="calc-field"><label>Factory Charge (oz) — from nameplate</label><input type="number" id="rc-factory" placeholder="e.g. 180"></div>
+    </div>
+    <p class="detail-text mt8" style="font-size:12px">Note: Always verify with manufacturer's charge chart. ±2 oz field tolerance typical.</p>
+    <div class="flex-end"><button class="btn" onclick="calcRefCharge()">Calculate</button></div>
+    <div id="rc-result"></div>
+  </div>
+
+  <!-- Sensible Heat -->
+  <div id="calc-sensible" style="display:none">
+    <div class="section-hdr">Sensible Heat Ratio & Capacity</div>
+    <div class="calc-grid">
+      <div class="calc-field"><label>Supply Air Temp °F</label><input type="number" id="sen-sat" placeholder="e.g. 55"></div>
+      <div class="calc-field"><label>Return Air Temp °F</label><input type="number" id="sen-rat" placeholder="e.g. 75"></div>
+      <div class="calc-field"><label>Supply Air CFM</label><input type="number" id="sen-cfm" placeholder="e.g. 2000"></div>
+      <div class="calc-field"><label>Total Unit Capacity (BTU/hr)</label><input type="number" id="sen-total" placeholder="e.g. 72000"></div>
+    </div>
+    <div class="flex-end"><button class="btn" onclick="calcSensible()">Calculate</button></div>
+    <div id="sen-result"></div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════
+     TAB 5 — COMMISSIONING
+══════════════════════════════════════════ -->
+<div id="tab-commission" class="tab-panel">
+  <div class="filter-row" id="commission-filters">
+    <button class="filter-btn active" onclick="loadChecklist('pre',this)">Pre-Startup</button>
+    <button class="filter-btn" onclick="loadChecklist('startup',this)">Startup</button>
+    <button class="filter-btn" onclick="loadChecklist('cooling',this)">Cooling Check</button>
+    <button class="filter-btn" onclick="loadChecklist('heating',this)">Heating Check</button>
+    <button class="filter-btn" onclick="loadChecklist('controls',this)">Controls Verify</button>
+  </div>
+  <div class="progress-text" id="commission-progress-text">0 of 0 complete</div>
+  <div class="progress-bar"><div class="progress-fill" id="commission-progress-fill" style="width:0%"></div></div>
+  <div class="flex-end" style="margin-top:0;margin-bottom:12px;">
+    <button class="btn btn-outline" onclick="resetChecklist()">Reset</button>
+    <button class="btn btn-outline" onclick="printChecklist()">Print</button>
+  </div>
+  <div id="checklist-container"></div>
+</div>
+
+<!-- ══════════════════════════════════════════
+     TAB 6 — RESOURCES
+══════════════════════════════════════════ -->
+<div id="tab-resources" class="tab-panel">
+  <div class="info-banner">Links open in your browser. Manuals are available free on AAON's website — no login required.</div>
+  <div class="section-hdr">Official AAON Resources</div>
+
+  <div class="resource-card">
+    <div class="resource-icon">📘</div>
+    <div>
+      <div class="resource-title">AAON Technical Manuals & Documentation</div>
+      <div class="resource-desc">Installation, operation, and maintenance manuals for all AAON unit series. Free download, no account required.</div>
+      <a class="resource-link" href="https://www.aaon.com/resources/technical-documents" target="_blank">aaon.com/resources/technical-documents</a>
+    </div>
+  </div>
+
+  <div class="resource-card">
+    <div class="resource-icon">🎓</div>
+    <div>
+      <div class="resource-title">AAON University — Training</div>
+      <div class="resource-desc">Free online training courses for installers and service technicians covering AAON product lines and controls.</div>
+      <a class="resource-link" href="https://university.aaon.com" target="_blank">university.aaon.com</a>
+    </div>
+  </div>
+
+  <div class="resource-card">
+    <div class="resource-icon">📞</div>
+    <div>
+      <div class="resource-title">AAON Technical Support</div>
+      <div class="resource-desc">Live technical support for installers and service contractors. Have the unit serial number and model number ready.</div>
+      <div class="resource-link">1-918-583-2266 (Tulsa HQ)</div>
+    </div>
+  </div>
+
+  <div class="resource-card">
+    <div class="resource-icon">🔧</div>
+    <div>
+      <div class="resource-title">AAON Parts</div>
+      <div class="resource-desc">Genuine AAON replacement parts lookup and ordering portal.</div>
+      <a class="resource-link" href="https://parts.aaon.com" target="_blank">parts.aaon.com</a>
+    </div>
+  </div>
+
+  <div class="section-hdr">Refrigerant & HVAC Reference</div>
+
+  <div class="resource-card">
+    <div class="resource-icon">❄️</div>
+    <div>
+      <div class="resource-title">Refrigerant PT Charts (Reftool)</div>
+      <div class="resource-desc">Free online pressure-temperature calculator for all common refrigerants including R-410A, R-454B, R-22, R-32.</div>
+      <a class="resource-link" href="https://www.refrigerants.com/pt-chart.htm" target="_blank">refrigerants.com/pt-chart.htm</a>
+    </div>
+  </div>
+
+  <div class="resource-card">
+    <div class="resource-icon">🌡️</div>
+    <div>
+      <div class="resource-title">ASHRAE Standards Reference</div>
+      <div class="resource-desc">ASHRAE 62.1 (ventilation), 90.1 (energy efficiency), 15 (refrigerant safety) — core standards for AAON commercial equipment.</div>
+      <a class="resource-link" href="https://www.ashrae.org/technical-resources/free-resources" target="_blank">ashrae.org — Free Resources</a>
+    </div>
+  </div>
+
+  <div class="resource-card">
+    <div class="resource-icon">📡</div>
+    <div>
+      <div class="resource-title">BACnet International</div>
+      <div class="resource-desc">BACnet protocol reference, object types, and testing resources for AAON BACnet integration.</div>
+      <a class="resource-link" href="https://www.bacnetinternational.org" target="_blank">bacnetinternational.org</a>
+    </div>
+  </div>
+
+  <div class="section-hdr">About AAONAssist</div>
+  <div class="resource-card">
+    <div class="resource-icon">ℹ️</div>
+    <div>
+      <div class="resource-title">Version & Data</div>
+      <div class="resource-desc">AAONAssist v1.0 — Offline-capable single-file tool. Fault codes, controls data, and checklists are built-in and work without internet. Resources tab requires internet. Data sourced from AAON technical documentation. Always verify critical decisions against official AAON manuals for your specific unit.</div>
+    </div>
+  </div>
+</div>
+
+<script>
+// ════════════════════════════════════════════════
+// DATA — FAULT CODES
+// ════════════════════════════════════════════════
+const FAULTS = [
+  // ── Compressor / Refrigerant ──
+  { code:"F01", title:"High Pressure Lockout", series:["RQ","RN","OH","WH","HA","HB"], sev:"critical",
+    desc:"High refrigerant discharge pressure exceeded limit (typically 610 psig R-410A / 640 psig R-454B). Unit locked out.",
+    causes:["Dirty or blocked condenser coil","Condenser fan motor failed or slow","Refrigerant overcharge","Non-condensables in system","Ambient temperature exceeds unit design range","Liquid line solenoid stuck closed"],
+    actions:["Check condenser coil for debris/fouling — clean if needed","Verify all condenser fans are running at full speed","Check discharge pressure with manifold gauges","Verify refrigerant charge against nameplate","Check for non-condensables — recover and recharge if needed","Cycle power after fault cleared (requires manual reset on most models)"]
+  },
+  { code:"F02", title:"Low Pressure Lockout", series:["RQ","RN","OH","WH","HA","HB"], sev:"critical",
+    desc:"Low refrigerant suction pressure below cutout limit (typically 55 psig R-410A). Unit locked out.",
+    causes:["Low refrigerant charge / leak","Dirty evaporator coil","Low airflow over evaporator — dirty filter or failed blower","Filter drier restriction","Liquid line solenoid or TXV stuck closed","Low ambient — below low ambient lockout setpoint"],
+    actions:["Check suction pressure with gauges","Inspect evaporator coil for frost/ice — allow to defrost","Check all air filters — replace if dirty","Measure ESP (external static pressure)","Check for refrigerant leak — electronic leak detector at all joints","Inspect filter drier for pressure drop (> 3 psig = restriction)"]
+  },
+  { code:"F03", title:"High Pressure Cutout — Stage 2", series:["RQ","RN"], sev:"critical",
+    desc:"Second high pressure event within lockout reset window. Indicates persistent HP fault requiring investigation before reset.",
+    causes:["Same as F01 but recurring","Faulty high pressure switch","Compressor discharge valve damaged"],
+    actions:["Do not repeatedly reset","Investigate root cause of HP condition","Test HP switch continuity and setpoint","Check compressor amp draw"]
+  },
+  { code:"F04", title:"Compressor Overload / Internal Thermostat", series:["RQ","RN","OH","WH"], sev:"critical",
+    desc:"Compressor internal thermal overload tripped. Compressor is overheating.",
+    causes:["High discharge temp from poor refrigerant flow","Low voltage causing high amp draw","Compressor starting under high head pressure","Suction pressure too low — refrigerant starvation","Ambient too high for compressor design"],
+    actions:["Allow compressor to cool (30–60 min) before restart attempt","Check supply voltage — must be within ±10% of nameplate","Check head pressure and suction pressure","Verify crankcase heater is working","Check compressor amp draw vs nameplate RLA"]
+  },
+  { code:"F05", title:"Discharge Temperature High", series:["RQ","RN","OH","WH","HA"], sev:"critical",
+    desc:"Discharge line temperature sensor exceeded setpoint (typically 240°F). Indicates refrigerant or compressor problem.",
+    causes:["Low suction pressure / refrigerant undercharge","High compression ratio","Loss of liquid injection (if equipped)","Failed discharge temp sensor"],
+    actions:["Check suction and discharge pressures","Verify superheat at compressor suction","Inspect liquid line solenoid and TXV operation","Replace discharge temp sensor if open/short circuit"]
+  },
+  { code:"F06", title:"Refrigerant Leak Detected", series:["RQ","RN","OH","WH"], sev:"critical",
+    desc:"Refrigerant leak sensor (if installed) detected concentration above alarm threshold.",
+    causes:["Leak at fitting, joint, or coil","Sensor contamination or drift"],
+    actions:["Do not reset until area is ventilated","Locate leak with electronic detector","Repair leak and pressure test","Recalibrate or replace leak sensor"]
+  },
+  { code:"F10", title:"Supply Air Temp Sensor Fault", series:["RQ","RN","OH","WH","HA","HB"], sev:"warning",
+    desc:"Supply air temperature sensor open or short circuit. Unit may continue in fallback mode.",
+    causes:["Loose connection at sensor or control board","Failed thermistor","Water damage to sensor"],
+    actions:["Check wiring continuity to sensor","Measure sensor resistance — compare to resistance table in manual","Replace sensor if out of spec","Check connector for corrosion"]
+  },
+  { code:"F11", title:"Return Air Temp Sensor Fault", series:["RQ","RN","OH","WH","HA","HB"], sev:"warning",
+    desc:"Return air temperature sensor open or short circuit.",
+    causes:["Loose connection","Failed thermistor","Sensor located in direct sunlight or near heat source"],
+    actions:["Check wiring and connector","Measure sensor resistance","Verify sensor placement is correct per wiring diagram","Replace if failed"]
+  },
+  { code:"F12", title:"Outdoor Air Temp Sensor Fault", series:["RQ","RN","OH","WH","HA","HB"], sev:"warning",
+    desc:"Outdoor air temperature sensor open or short circuit. May affect economizer and low-ambient controls.",
+    causes:["Damaged sensor — UV exposure or physical damage","Loose wiring","Water intrusion"],
+    actions:["Inspect sensor for physical damage","Check wiring from sensor to control board","Measure resistance — typical 10kΩ at 77°F for most AAON units","Replace sensor if reading open or short"]
+  },
+  { code:"F15", title:"Evaporator Coil Freeze-Up", series:["RQ","RN","OH","WH"], sev:"warning",
+    desc:"Evaporator leaving coil temp below freeze threshold (typically 34°F). Cooling stage disabled.",
+    causes:["Dirty air filter","Low airflow — blower issue","Low refrigerant charge","Iced coil from extended operation in high humidity"],
+    actions:["Check and replace air filters","Verify blower is running and belt/drive is intact","Measure airflow — compare to design CFM","Allow defrost — do not restart cooling immediately","Check refrigerant pressures after defrost"]
+  },
+  { code:"F20", title:"Economizer Damper Fault", series:["RQ","RN","OH","WH","HA","HB"], sev:"warning",
+    desc:"Economizer actuator feedback out of range or damper position error greater than setpoint tolerance.",
+    causes:["Actuator failed or seized","Feedback potentiometer failed","Damper blade binding — ice or debris","Wiring fault at actuator"],
+    actions:["Manually drive actuator through full stroke","Check 2–10V feedback signal at control board","Inspect damper blades for ice, debris, or binding","Replace actuator if no feedback or motor failure"]
+  },
+  { code:"F21", title:"Economizer High CO₂ Override", series:["RQ","RN","OH","WH","HA"], sev:"info",
+    desc:"CO₂ sensor is demanding more outdoor air than setpoint allows. Economizer opened beyond normal position.",
+    causes:["High occupancy / CO₂ build-up","CO₂ sensor drift — reading high"],
+    actions:["Verify actual CO₂ level with calibrated meter","Calibrate or replace CO₂ sensor if drifted","Check outdoor air damper is physically opening"]
+  },
+  { code:"F25", title:"Supply Fan Overload", series:["RQ","RN","OH","WH","HA","HB"], sev:"critical",
+    desc:"Supply fan motor overload relay tripped. Blower section shut down.",
+    causes:["Dirty filter causing motor to overload","Drive belt slipping or too tight","VFD fault (on variable speed units)","Motor winding failure","Ductwork restriction or damper closed"],
+    actions:["Check amp draw on all three phases","Inspect belt tension and condition","Check VFD fault log if equipped","Measure external static pressure","Reset overload relay after resolving cause"]
+  },
+  { code:"F26", title:"Condenser Fan Overload", series:["RQ","RN","OH","WH"], sev:"critical",
+    desc:"Condenser fan motor overload relay tripped.",
+    causes:["Motor windings failing","Locked rotor — fan blade damaged or obstruction","Capacitor failure (PSC motors)"],
+    actions:["Check amp draw on all condenser fan motors","Inspect fan blades for damage or obstruction","Test motor winding resistance for shorts","Replace capacitor if motor is single-phase PSC type"]
+  },
+  { code:"F30", title:"Low Ambient Lockout", series:["RQ","RN","OH","WH"], sev:"info",
+    desc:"Outdoor temperature below mechanical cooling lockout setpoint. Cooling stages disabled.",
+    causes:["Normal operation — ambient too cold for standard cooling","Low ambient kit not installed or not activated","Lockout setpoint too high"],
+    actions:["Verify setpoint is appropriate for application","If low ambient operation is required, install/enable low ambient kit","Check outdoor air sensor is reading correctly"]
+  },
+  { code:"F31", title:"High Ambient Lockout", series:["RQ","RN","OH","WH"], sev:"warning",
+    desc:"Outdoor temperature above high ambient setpoint (typically 115°F). Cooling efficiency warning.",
+    causes:["Extreme ambient conditions","OAT sensor reading high due to location near heat source","Recirculation of condenser discharge air"],
+    actions:["Verify OAT sensor reading with calibrated thermometer","Check for condenser air recirculation","Ensure adequate clearances per installation manual"]
+  },
+  { code:"F35", title:"Loss of Communication — BACnet/Modbus", series:["RQ","RN","OH","WH","HA","HB"], sev:"warning",
+    desc:"BAS/BMS communication loss detected. Unit may revert to standalone or occupied mode depending on configuration.",
+    causes:["Network cable disconnected or damaged","Incorrect address/baud rate","BAS controller offline","Termination resistor missing"],
+    actions:["Check RS-485 wiring polarity (A/B/GND)","Verify unit address matches BAS configuration","Confirm baud rate matches on both ends","Check termination resistor at end of daisy chain","Verify BAS controller is online"]
+  },
+  { code:"F40", title:"Gas Heat Lockout — Ignition Failure", series:["RN","OH","HA","HB"], sev:"critical",
+    desc:"Gas burner failed to ignite after allowed retries. Heat stage locked out.",
+    causes:["Gas supply off or low pressure","Ignitor failed","Flame sensor fouled or failed","Inducer motor issue","Safety limit tripped (rollout, draft)"],
+    actions:["Verify gas supply is on and pressure is within spec (3.5\" w.c. natural gas at manifold)","Check ignitor resistance — ceramic ignitor typically 50–200Ω when cold","Clean or replace flame sensor rod","Check inducer motor operation — verify proving switch closes","Check rollout switch and draft switch continuity"]
+  },
+  { code:"F41", title:"Gas Heat High Limit Lockout", series:["RN","OH","HA","HB"], sev:"critical",
+    desc:"Heat exchanger high limit switch opened. Heat exchanger overheating.",
+    causes:["Low airflow over heat exchanger","Filter restriction","Supply duct blocked","Blower failure","Limit switch failed open"],
+    actions:["Check all filters and ductwork","Verify blower is running at full speed","Allow unit to cool before reset","Check limit switch continuity — if opens again at low temp, replace switch","Inspect heat exchanger for cracks or blockage"]
+  },
+  { code:"F42", title:"Electric Heat Overtemperature", series:["RQ","OH","WH"], sev:"critical",
+    desc:"Electric resistance heat section exceeded temperature limit. Staged off.",
+    causes:["Airflow too low across elements","Element failed open — remaining elements overworking","Sequencer fault causing elements to all energize simultaneously"],
+    actions:["Check airflow — compare supply vs return temp rise to design","Measure amp draw on each element bank","Check sequencer timing","Verify high limit switch opens at correct temp"]
+  },
+  { code:"F50", title:"Hot Water Coil Freeze Stat", series:["RN","OH","WH","HA","HB"], sev:"critical",
+    desc:"Freezestat on hot water coil tripped — water temperature too low.",
+    causes:["Hot water valve failed closed","Chilled air entering unit with no heat source","Freezestat calibration drift"],
+    actions:["Check hot water supply temperature and flow","Verify valve actuator is powered and responding","Check glycol concentration if applicable","Do not restart until coil is above 40°F — risk of burst"]
+  },
+  { code:"F60", title:"VFD Fault — Supply Fan", series:["RQ","RN","OH","WH","HA","HB"], sev:"critical",
+    desc:"Variable frequency drive on supply fan reported fault condition. Fan stopped.",
+    causes:["Overcurrent — motor or drive issue","Overvoltage during decel","Overtemperature in drive cabinet","Communication loss to VFD","Ground fault in motor wiring"],
+    actions:["Read VFD fault code from drive display or keypad","Check input voltage on all three phases","Verify drive cabinet temperature and ventilation","Check motor wiring insulation resistance (megohm test)","Reset drive and monitor for reoccurrence"]
+  },
+  { code:"F61", title:"VFD Fault — Condenser Fan", series:["RQ","RN","OH"], sev:"critical",
+    desc:"Variable frequency drive on condenser fan reported fault.",
+    causes:["Overcurrent","Motor winding fault","Drive overtemperature","Input voltage issue"],
+    actions:["Read VFD fault code","Check condenser fan motor amp draw and winding resistance","Verify 3-phase input voltage","Check drive cooling fan inside panel"]
+  },
+  { code:"F70", title:"Dirty Filter Status", series:["RQ","RN","OH","WH","HA","HB"], sev:"info",
+    desc:"Filter differential pressure switch indicates dirty filter condition. Airflow may be restricted.",
+    causes:["Filters at end of service life","Filter pressure switch setpoint too sensitive","Wet or collapsed filter media"],
+    actions:["Inspect and replace filters","Verify filter pressure drop across all filter banks","Check differential pressure switch setpoint — adjust if too sensitive"]
+  },
+  { code:"F75", title:"Smoke Detector Alarm", series:["RQ","RN","OH","WH","HA","HB"], sev:"critical",
+    desc:"Duct smoke detector tripped. Unit shut down per life safety protocol.",
+    causes:["Actual smoke in duct","Dust or debris triggering detector","Failed smoke detector","Wiring fault (some detectors fail safe = alarm)"],
+    actions:["Treat as real fire condition until confirmed otherwise","Investigate source before reset","Clean or replace smoke detector","Check wiring for shorts","Contact AHJ before reset if actual alarm"]
+  },
+  { code:"F80", title:"Dehumidification Fault", series:["RQ","RN","OH"], sev:"warning",
+    desc:"Dehumidification mode not achieving target — humidity above setpoint for extended period.",
+    causes:["Reheat not activating","Oversized equipment cycling short","High latent load beyond unit capacity","Sensor error"],
+    actions:["Verify dehumidification mode is enabled and setpoint is correct","Check reheat valve/element is energizing","Measure supply air RH and dewpoint","Verify room humidity sensor calibration"]
+  },
+
+  // ── WH / Water Source Heat Pump specific ──
+  { code:"F90", title:"Entering Water Temp — Low Limit", series:["WH"], sev:"critical",
+    desc:"Loop water temperature below heating low limit (typically 40°F). Heat pump operation stopped to prevent coil freeze.",
+    causes:["Cooling tower in freeze condition","Boiler offline","Flow switch issue — no flow alarm false trigger"],
+    actions:["Check loop water temperature at entering connection","Verify boiler or supplemental heat is operational","Check flow switch wiring and setpoint"]
+  },
+  { code:"F91", title:"Entering Water Temp — High Limit", series:["WH"], sev:"critical",
+    desc:"Loop water temperature above cooling high limit (typically 104°F). Cooling operation stopped.",
+    causes:["Cooling tower offline or failed","High loop load — undersized system","Pump failure — no flow through tower"],
+    actions:["Check cooling tower operation","Verify pump flow rate","Check tower make-up water and blowdown"]
+  },
+  { code:"F92", title:"No Water Flow", series:["WH"], sev:"critical",
+    desc:"Flow switch indicates no water flow through unit. Compressor locked out.",
+    causes:["System pump offline","Manual shutoff valve closed","Flow switch failed or out of calibration","Air in loop piping"],
+    actions:["Verify pump is running","Check isolation valves are open","Purge air from loop","Check flow switch paddle for debris","Verify flow rate meets minimum GPM per unit spec"]
+  },
+];
+
+// ════════════════════════════════════════════════
+// DATA — CONTROLS REFERENCE
+// ════════════════════════════════════════════════
+const CONTROLS = [
+  // BACnet points
+  { name:"Supply Air Temp",         proto:"BACnet", addr:"AI 1",  type:"Sensor",   range:"-40 to 250°F",    desc:"Supply air leaving unit temperature (°F)" },
+  { name:"Return Air Temp",         proto:"BACnet", addr:"AI 2",  type:"Sensor",   range:"-40 to 150°F",    desc:"Return air entering unit temperature (°F)" },
+  { name:"Outdoor Air Temp",        proto:"BACnet", addr:"AI 3",  type:"Sensor",   range:"-40 to 150°F",    desc:"Outdoor ambient temperature (°F)" },
+  { name:"Supply Air SP",           proto:"BACnet", addr:"AV 1",  type:"Setpoint", range:"45–80°F",         desc:"Supply air temperature setpoint (°F)" },
+  { name:"Cooling Setpoint",        proto:"BACnet", addr:"AV 2",  type:"Setpoint", range:"55–85°F",         desc:"Space cooling setpoint (°F)" },
+  { name:"Heating Setpoint",        proto:"BACnet", addr:"AV 3",  type:"Setpoint", range:"55–80°F",         desc:"Space heating setpoint (°F)" },
+  { name:"Dehumid Setpoint",        proto:"BACnet", addr:"AV 4",  type:"Setpoint", range:"30–70% RH",       desc:"Space dehumidification setpoint (%RH)" },
+  { name:"Min OA Damper Position",  proto:"BACnet", addr:"AV 5",  type:"Setpoint", range:"0–100%",          desc:"Minimum outdoor air damper position (%)" },
+  { name:"Unit Enable",             proto:"BACnet", addr:"BV 1",  type:"Setpoint", range:"Active/Inactive", desc:"Enable/Disable unit from BAS" },
+  { name:"Occupied Mode",           proto:"BACnet", addr:"BV 2",  type:"Setpoint", range:"Active/Inactive", desc:"Force occupied or unoccupied mode" },
+  { name:"Economizer Enable",       proto:"BACnet", addr:"BV 3",  type:"Setpoint", range:"Active/Inactive", desc:"Enable/disable economizer operation" },
+  { name:"Cooling Stage 1",         proto:"BACnet", addr:"BO 1",  type:"Sensor",   range:"Active/Inactive", desc:"Cooling stage 1 output status" },
+  { name:"Cooling Stage 2",         proto:"BACnet", addr:"BO 2",  type:"Sensor",   range:"Active/Inactive", desc:"Cooling stage 2 output status" },
+  { name:"Heating Stage 1",         proto:"BACnet", addr:"BO 3",  type:"Sensor",   range:"Active/Inactive", desc:"Heating stage 1 output status" },
+  { name:"Heating Stage 2",         proto:"BACnet", addr:"BO 4",  type:"Sensor",   range:"Active/Inactive", desc:"Heating stage 2 output status" },
+  { name:"Supply Fan Output",       proto:"BACnet", addr:"AO 1",  type:"Sensor",   range:"0–100%",          desc:"Supply fan VFD speed command (%)" },
+  { name:"Condenser Fan Output",    proto:"BACnet", addr:"AO 2",  type:"Sensor",   range:"0–100%",          desc:"Condenser fan speed command (%)" },
+  { name:"Active Fault Code",       proto:"BACnet", addr:"AV 20", type:"Sensor",   range:"0–99",            desc:"Most recent active fault code number" },
+  { name:"Discharge Pressure",      proto:"BACnet", addr:"AI 10", type:"Sensor",   range:"0–700 psig",      desc:"Refrigerant discharge pressure (psig)" },
+  { name:"Suction Pressure",        proto:"BACnet", addr:"AI 11", type:"Sensor",   range:"0–300 psig",      desc:"Refrigerant suction pressure (psig)" },
+  { name:"Space RH",                proto:"BACnet", addr:"AI 12", type:"Sensor",   range:"0–100% RH",       desc:"Space relative humidity if sensor installed" },
+  { name:"CO₂ Level",               proto:"BACnet", addr:"AI 13", type:"Sensor",   range:"0–2000 ppm",      desc:"Space CO₂ concentration (if sensor installed)" },
+  // Modbus
+  { name:"Supply Air Temp",         proto:"Modbus", addr:"40001", type:"Sensor",   range:"Signed int × 10", desc:"Supply air temp in tenths of °F" },
+  { name:"Return Air Temp",         proto:"Modbus", addr:"40002", type:"Sensor",   range:"Signed int × 10", desc:"Return air temp in tenths of °F" },
+  { name:"OAT",                     proto:"Modbus", addr:"40003", type:"Sensor",   range:"Signed int × 10", desc:"Outdoor air temp in tenths of °F" },
+  { name:"Supply Air SP",           proto:"Modbus", addr:"40101", type:"Setpoint", range:"Signed int × 10", desc:"Supply air setpoint in tenths of °F (R/W)" },
+  { name:"Cooling SP",              proto:"Modbus", addr:"40102", type:"Setpoint", range:"Signed int × 10", desc:"Cooling setpoint in tenths of °F (R/W)" },
+  { name:"Heating SP",              proto:"Modbus", addr:"40103", type:"Setpoint", range:"Signed int × 10", desc:"Heating setpoint in tenths of °F (R/W)" },
+  { name:"Unit Enable",             proto:"Modbus", addr:"00001", type:"Setpoint", range:"0=Off, 1=On",     desc:"Enable / disable unit (coil register)" },
+  { name:"Occupied",                proto:"Modbus", addr:"00002", type:"Setpoint", range:"0=Unocc, 1=Occ",  desc:"Occupied / unoccupied command" },
+  { name:"Active Fault",            proto:"Modbus", addr:"40201", type:"Sensor",   range:"0–99",            desc:"Current fault code (0 = no fault)" },
+  { name:"Discharge Pressure",      proto:"Modbus", addr:"40010", type:"Sensor",   range:"0–700",           desc:"Discharge pressure in psig" },
+  { name:"Suction Pressure",        proto:"Modbus", addr:"40011", type:"Sensor",   range:"0–300",           desc:"Suction pressure in psig" },
+];
+
+// ════════════════════════════════════════════════
+// DATA — DIAGNOSTIC TREES
+// ════════════════════════════════════════════════
+const DIAG_TREES = {
+  "Not Cooling": {
+    q: "Is the unit running (supply fan on)?",
+    opts: {
+      "Fan running, no cooling": {
+        q: "What do the refrigerant pressures show?",
+        opts: {
+          "Both low — suction and discharge": {
+            result: "Low Charge / Leak",
+            detail: "Both pressures low suggests refrigerant loss.\n1. Check for leaks at all joints, valves, coils with electronic leak detector.\n2. Recover, repair, pressure test 300 psig nitrogen, recharge to nameplate weight.\n3. Check for ice on suction line — low charge often causes freeze-up."
+          },
+          "Suction low, discharge normal/high": {
+            q: "Is there frost on the evaporator coil?",
+            opts: {
+              "Yes — frost/ice present": {
+                result: "Evaporator Freeze-Up",
+                detail: "Coil iced over reducing airflow.\n1. Turn off cooling, run fan only to defrost (30–60 min).\n2. Check air filters — replace if dirty.\n3. Measure ESP — if high, check ductwork.\n4. After defrost, check refrigerant charge."
+              },
+              "No frost": {
+                result: "Low Airflow or TXV Issue",
+                detail: "Low suction with normal discharge and no frost points to reduced airflow or metering device restriction.\n1. Verify blower speed and belt/drive.\n2. Check TXV bulb is secured to suction line with insulation tape.\n3. Check filter drier pressure drop (> 3 psig = restricted)."
+              }
+            }
+          },
+          "Both high — above normal": {
+            result: "High Head Pressure Condition",
+            detail: "High pressures indicate condenser problem.\n1. Check condenser coil — clean if fouled.\n2. Verify all condenser fans running at correct speed.\n3. Check for condenser air recirculation (short-cycling hot air back in).\n4. Verify ambient is within unit design range.\n5. Check for refrigerant overcharge."
+          },
+          "Pressures look normal": {
+            result: "Controls / Staging Issue",
+            detail: "If pressures are in range but cooling isn't occurring:\n1. Verify call for cooling from thermostat/BAS.\n2. Check low ambient lockout setpoint — is OAT below it?\n3. Verify compressor contactor is pulling in.\n4. Check for active fault codes on controller.\n5. Verify compressor is running — listen and feel for vibration."
+          }
+        }
+      },
+      "Fan not running": {
+        q: "Is there power to the unit?",
+        opts: {
+          "Yes, power OK": {
+            result: "Fan or Controls Fault",
+            detail: "Power present but fan not running:\n1. Check for active fault codes — F25 (fan overload) is common.\n2. Check overload relay — if tripped, identify cause before resetting.\n3. Verify fan motor starter or contactor is pulling in.\n4. Check VFD if equipped — read fault code from display.\n5. Check filter — if extremely dirty, overload may trip immediately."
+          },
+          "No power / tripped breaker": {
+            result: "Electrical Supply Issue",
+            detail: "1. Check main disconnect and branch breaker.\n2. Do not reset breaker repeatedly — find fault first.\n3. Check for ground fault — megohm test motor windings.\n4. Verify incoming voltage on all phases.\n5. Check for short in control wiring."
+          }
+        }
+      }
+    }
+  },
+  "Not Heating": {
+    q: "What type of heat does the unit have?",
+    opts: {
+      "Gas heat": {
+        q: "Is the inducer motor running?",
+        opts: {
+          "Yes": {
+            q: "Does the ignitor glow?",
+            opts: {
+              "Yes — glows but no flame": {
+                result: "Gas Supply or Flame Sensor Issue",
+                detail: "Ignitor working but gas not lighting:\n1. Verify gas is on — manual shutoff at unit.\n2. Check gas pressure at manifold (3.5\" w.c. natural gas, 10\" w.c. propane).\n3. Check gas valve wiring and 24V signal to valve.\n4. Clean flame sensor rod with fine steel wool.\n5. Check for fault code F40."
+              },
+              "No — does not glow": {
+                result: "Ignitor Failed",
+                detail: "1. Measure ignitor resistance — ceramic type: 50–200Ω cold. Open = failed.\n2. Check 120V supply to ignitor terminals during ignition trial.\n3. Replace ignitor.\n4. Check ignitor module on control board."
+              }
+            }
+          },
+          "No — inducer not running": {
+            result: "Inducer Motor or Control Issue",
+            detail: "1. Check for 120V at inducer motor during heat call.\n2. Check rollout switch and draft proving switch — both must be closed for inducer to start.\n3. Measure inducer motor winding resistance.\n4. Check fault code F40 or F41 on controller."
+          }
+        }
+      },
+      "Electric resistance heat": {
+        result: "Check Electric Heat Sequence",
+        detail: "1. Verify call for heat from thermostat/BAS.\n2. Check sequencer operation — elements should stage on with 30–60 sec delay between stages.\n3. Check amp draw on each element bank — open element = 0A.\n4. Verify high limit switch is closed (F42 fault if tripped).\n5. Check airflow — low airflow trips high limit."
+      },
+      "Heat pump (WH or cooling only)": {
+        result: "Check Heat Pump Heating Mode",
+        detail: "For water-source heat pumps:\n1. Verify loop water is above 40°F entering unit (F90 fault if below).\n2. Check reversing valve — must shift to heating position.\n3. Verify suction becomes the indoor coil side in heat mode.\n4. Check entering water temp — optimal 60–90°F.\n5. Measure leaving water temp delta (should be 10–15°F lower in heating)."
+      }
+    }
+  },
+  "High Static / Low Airflow": {
+    q: "When did the problem start?",
+    opts: {
+      "Sudden — was fine before": {
+        q: "Any recent changes to the system?",
+        opts: {
+          "New filters installed": {
+            result: "Wrong Filter Type",
+            detail: "Higher-MERV filters significantly increase static pressure.\n1. Compare new filter MERV rating to design — AAON typically designs for MERV 8–13.\n2. Measure ESP with new vs old filters.\n3. If too restrictive, use lower MERV or increase filter face area.\n4. If VFD equipped, check if fan speed auto-compensated."
+          },
+          "No recent changes": {
+            result: "Mechanical Fault",
+            detail: "Sudden airflow drop with no changes:\n1. Check for collapsed duct, damper closed, or VAV box issue.\n2. Listen for unusual noise from fan section.\n3. Check belt — broken or slipped belt will drop CFM immediately.\n4. Check VFD output frequency if equipped."
+          }
+        }
+      },
+      "Gradual over time": {
+        result: "Progressive Restriction",
+        detail: "Gradual airflow reduction suggests accumulation:\n1. Inspect all filter banks — measure pressure drop.\n2. Inspect evaporator coil for dirt accumulation (pull-through coil gets dirty fast if upstream filter leaks).\n3. Check fan wheel for dirt buildup — even small accumulation dramatically reduces flow.\n4. Check belt wear and tension.\n5. Verify duct system has not been modified."
+      }
+    }
+  },
+  "BAS Communication Lost": {
+    q: "What protocol is being used?",
+    opts: {
+      "BACnet MS/TP": {
+        q: "Can you see any units on the network?",
+        opts: {
+          "No units at all": {
+            result: "Network-Level Issue",
+            detail: "1. Check RS-485 wiring at BAS controller — A/B/GND polarity.\n2. Verify termination resistor (120Ω) is at each end of the daisy chain.\n3. Confirm baud rate matches all devices (typically 9600, 19200, or 38400).\n4. Check for ground loops — use isolated RS-485 repeater if needed.\n5. Try connecting a field laptop directly to verify network."
+          },
+          "Some units visible": {
+            result: "Individual Unit Issue",
+            detail: "1. Verify unit MAC address is unique on the network (0–127 MS/TP).\n2. Check wiring from last known good device to missing unit.\n3. Power cycle the unit controller.\n4. Check for F35 fault on unit controller display.\n5. Confirm device instance is unique across whole BACnet network."
+          }
+        }
+      },
+      "Modbus RTU": {
+        result: "Modbus Troubleshooting",
+        detail: "1. Verify slave address matches BAS configuration (1–247).\n2. Confirm baud rate, parity, and stop bits match (common: 9600, N, 8, 1).\n3. Check RS-485 wiring — A(+) to A(+), B(-) to B(-).\n4. Termination resistor (120Ω) at end of chain.\n5. Use Modbus scanner/tester to verify register map matches unit configuration."
+      },
+      "Ethernet / BACnet IP": {
+        result: "IP Network Troubleshooting",
+        detail: "1. Verify IP address, subnet mask, and gateway on unit controller.\n2. Ping unit IP from BAS — check for response.\n3. Confirm UDP port 47808 (0xBAC0) is not blocked by firewall/VLAN.\n4. Check BACnet device instance is unique on network.\n5. Verify DHCP vs static IP — static recommended for HVAC."
+      }
+    }
+  }
+};
+
+// ════════════════════════════════════════════════
+// DATA — CHECKLISTS
+// ════════════════════════════════════════════════
+const CHECKLISTS = {
+  pre: [
+    "Verify unit is properly leveled — check all four corners",
+    "Confirm all shipping blocks and brackets removed",
+    "Inspect unit for transport damage — document if found",
+    "Verify supply and return duct connections sealed — no air leaks",
+    "Check electrical supply voltage and phase rotation",
+    "Verify wire sizing matches nameplate MCA and MOCP",
+    "Confirm all electrical connections tight — torque to spec",
+    "Crankcase heater energized for minimum 24 hours before first start",
+    "Verify refrigerant charge — weigh in if additional line set correction applies",
+    "Check and record refrigerant type from nameplate",
+    "All access panels in place and secured",
+    "Verify clearances meet installation manual requirements",
+    "Confirm condensate drain is properly trapped and pitched",
+    "Test condensate drain — pour water, verify free flow",
+    "Verify control wiring is per unit wiring diagram",
+    "Confirm thermostat or BAS is wired and configured",
+    "Check filter bank — clean filters installed",
+    "Inspect fan section — no obstructions in blower wheel",
+    "Verify belt tension and alignment (belt drive units)",
+    "Confirm economizer actuator moves freely — no binding",
+    "Verify gas supply is on and at correct pressure (gas heat units)",
+    "Check heat exchanger for cracks or damage before first fire",
+    "Record unit model, serial number, and installation date",
+  ],
+  startup: [
+    "Apply power — verify no tripped breakers or blown fuses",
+    "Measure incoming voltage on all three phases — within ±10% of nameplate",
+    "Verify phase rotation is correct (A-B-C sequence)",
+    "Enable unit from controller/thermostat",
+    "Confirm supply fan starts and rotates correct direction",
+    "Measure supply fan amp draw — record and compare to nameplate FLA",
+    "Measure supply air CFM — must meet design minimum",
+    "Verify economizer damper operates through full stroke",
+    "Check minimum outdoor air position",
+    "Enable cooling — verify stage 1 compressor starts",
+    "Measure and record suction pressure and temperature",
+    "Measure and record discharge pressure and temperature",
+    "Calculate and record superheat at compressor suction",
+    "Calculate and record subcooling at liquid line",
+    "Measure supply air temperature — verify cooling is achieved",
+    "Enable stage 2 cooling — verify second compressor or step starts",
+    "Measure and record all condenser fan amp draws",
+    "Verify no active fault codes on controller",
+    "Test high pressure cutout — bypass if required per manual",
+    "Test low pressure cutout — bypass if required per manual",
+    "Verify BAS communication — all points reading correctly",
+    "Test occupied/unoccupied schedule",
+    "Record all startup readings on startup form",
+  ],
+  cooling: [
+    "Unit in cooling mode — thermostat below current space temp",
+    "Record supply air temperature (target: setpoint ±2°F)",
+    "Record return air temperature",
+    "Record suction pressure (R-410A typical: 115–130 psig @ 45°F sat)",
+    "Record discharge pressure (R-410A typical: 370–420 psig)",
+    "Calculate superheat — target 8–14°F (TXV system)",
+    "Calculate subcooling — target 10–15°F",
+    "Record supply air CFM — compare to design",
+    "Verify all cooling stages responding to demand",
+    "Check condenser fans — all running, no unusual noise",
+    "Inspect condenser coil — no fouling, no damage",
+    "Verify economizer locks out below changeover setpoint",
+    "Check dehumidification operation if equipped",
+    "Record unit amp draw on all phases",
+    "Verify temperature split across coil meets spec",
+  ],
+  heating: [
+    "Unit in heating mode — thermostat above current space temp",
+    "Record supply air temperature (target: setpoint ±3°F)",
+    "Record return air temperature",
+    "Verify heating source is active (gas flame / electric elements / heat pump)",
+    "Check temperature rise across heat exchanger (gas: 35–70°F typical range)",
+    "Verify high limit switch is not tripping",
+    "Test safety limits — rollout switch, draft switch (gas units)",
+    "Verify heat staging sequence matches design",
+    "Check supply air CFM does not drop during heating",
+    "Verify dehumidification reheat operates correctly if equipped",
+    "Check flue gas venting — no blockage, proper slope (gas heat)",
+    "Inspect heat exchanger for cracks or discoloration (gas heat)",
+    "Record amp draw on all heat stages (electric heat)",
+    "Verify condensate drain remains open in heat mode",
+  ],
+  controls: [
+    "Verify BAS/BMS communication active — protocol confirmed",
+    "All sensor points reading correctly — verify against calibrated meter",
+    "Supply air temperature sensor calibrated and offset verified",
+    "Return air temperature sensor reading within ±1°F of calibrated reference",
+    "Outdoor air temperature sensor reading correctly",
+    "Discharge and suction pressure sensors verified (if Modbus/BACnet)",
+    "Occupied/unoccupied schedule confirmed and tested",
+    "Cooling setpoint accepts remote override from BAS",
+    "Heating setpoint accepts remote override from BAS",
+    "Minimum OA damper position verified via BAS",
+    "Demand control ventilation (CO₂) tested if equipped",
+    "Fault codes readable from BAS point list",
+    "Unit enable/disable command tested from BAS",
+    "All actuators reporting feedback position correctly",
+    "VFD speed command verified from BAS if variable flow",
+    "Alarm routing configured and tested",
+    "BAS setpoint limits confirmed (high/low clamps) to prevent over-set",
+    "Trend logs configured for key operational points",
+  ]
+};
+
+// ════════════════════════════════════════════════
+// STATE
+// ════════════════════════════════════════════════
+let faultFilter = 'ALL';
+let ctrlFilter  = 'ALL';
+let activeCalc  = 'superheat';
+let airflowMode = 'sp';
+let activeChecklist = 'pre';
+let checklistState  = {};
+let diagStack       = [];
+let activeDiagTopic = null;
+
+// ════════════════════════════════════════════════
+// TAB NAVIGATION
+// ════════════════════════════════════════════════
+function showTab(id, btn) {
+  document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById('tab-' + id).classList.add('active');
+  btn.classList.add('active');
+}
+
+// ════════════════════════════════════════════════
+// FAULT CODES
+// ════════════════════════════════════════════════
+function setFaultFilter(f, btn) {
+  faultFilter = f;
+  document.querySelectorAll('#fault-series-filters .filter-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  renderFaults();
+}
+function filterFaults() { renderFaults(); }
+
+function renderFaults() {
+  const q   = document.getElementById('fault-search').value.toLowerCase();
+  const list = document.getElementById('fault-list');
+  const filtered = FAULTS.filter(f => {
+    const seriesMatch = faultFilter === 'ALL' || f.series.includes(faultFilter);
+    const textMatch   = !q || f.code.toLowerCase().includes(q) ||
+      f.title.toLowerCase().includes(q) ||
+      f.desc.toLowerCase().includes(q) ||
+      f.causes.some(c => c.toLowerCase().includes(q)) ||
+      f.actions.some(a => a.toLowerCase().includes(q));
+    return seriesMatch && textMatch;
+  });
+
+  if (!filtered.length) {
+    list.innerHTML = '<div class="empty"><div class="empty-icon">🔎</div><p>No fault codes match your search.</p></div>';
+    return;
+  }
+  list.innerHTML = filtered.map(f => `
+    <div class="card sev-${f.sev}" id="fc-${f.code}">
+      <div class="card-header" onclick="toggleCard('fc-${f.code}')">
+        <span class="severity-dot"></span>
+        <span class="code-badge">${f.code}</span>
+        <span class="card-title">${f.title}</span>
+        <span class="card-series">${f.series.join(' · ')}</span>
+        <span class="chevron">▶</span>
+      </div>
+      <div class="card-body">
+        <div class="detail-section">
+          <div class="detail-label">Description</div>
+          <div class="detail-text">${f.desc}</div>
+        </div>
+        <div class="detail-section">
+          <div class="detail-label">Probable Causes</div>
+          <ul class="cause-list">${f.causes.map(c=>`<li>${c}</li>`).join('')}</ul>
+        </div>
+        <div class="detail-section">
+          <div class="detail-label">Recommended Actions</div>
+          <ul class="action-list">${f.actions.map(a=>`<li>${a}</li>`).join('')}</ul>
+        </div>
+      </div>
+    </div>
+  `).join('');
+}
+
+function toggleCard(id) {
+  const c = document.getElementById(id);
+  c.classList.toggle('open');
+}
+
+// ════════════════════════════════════════════════
+// DIAGNOSTICS
+// ════════════════════════════════════════════════
+function initDiag() {
+  const filters = document.getElementById('diag-topics');
+  Object.keys(DIAG_TREES).forEach((topic, i) => {
+    const btn = document.createElement('button');
+    btn.className = 'filter-btn' + (i === 0 ? ' active' : '');
+    btn.textContent = topic;
+    btn.onclick = () => {
+      document.querySelectorAll('#diag-topics .filter-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      startDiag(topic);
+    };
+    filters.appendChild(btn);
+  });
+  startDiag(Object.keys(DIAG_TREES)[0]);
+}
+
+function startDiag(topic) {
+  activeDiagTopic = topic;
+  diagStack = [{ node: DIAG_TREES[topic], choice: null }];
+  renderDiag();
+}
+
+function diagChoose(optKey) {
+  const current = diagStack[diagStack.length - 1].node;
+  const next = current.opts[optKey];
+  diagStack.push({ node: next, choice: optKey });
+  renderDiag();
+}
+
+function renderDiag() {
+  const tree  = document.getElementById('diag-tree');
+  const frame = diagStack[diagStack.length - 1];
+  const node  = frame.node;
+
+  // Breadcrumb
+  let crumb = activeDiagTopic;
+  for (let i = 1; i < diagStack.length; i++) {
+    if (diagStack[i].choice) crumb += ' › ' + diagStack[i].choice;
+  }
+
+  let html = `<div class="breadcrumb">${crumb}</div>`;
+
+  if (node.result) {
+    // Terminal node
+    const detailLines = node.detail.split('\n').map(l => `<p style="margin-bottom:4px">${l}</p>`).join('');
+    html += `
+      <div class="symptom-result">
+        <div class="res-title">🔧 ${node.result}</div>
+        <div class="res-body">${detailLines}</div>
+      </div>`;
+    if (diagStack.length > 1) {
+      html += `<div class="flex-end"><button class="btn btn-outline" onclick="diagBack()">← Back</button>
+        <button class="btn btn-outline" onclick="startDiag(activeDiagTopic)">Restart</button></div>`;
+    }
+  } else {
+    // Question node
+    html += `<div class="symptom-node">
+      <div class="symptom-q">${node.q}</div>
+      <div class="symptom-opts">
+        ${Object.keys(node.opts).map(opt => `
+          <div class="symptom-opt" onclick="diagChoose(${JSON.stringify(opt)})">${opt}</div>
+        `).join('')}
+      </div>
+    </div>`;
+    if (diagStack.length > 1) {
+      html += `<div class="flex-end"><button class="btn btn-outline" onclick="diagBack()">← Back</button></div>`;
+    }
+  }
+
+  tree.innerHTML = html;
+}
+
+function diagBack() {
+  if (diagStack.length > 1) { diagStack.pop(); renderDiag(); }
+}
+
+// ════════════════════════════════════════════════
+// CONTROLS REFERENCE
+// ════════════════════════════════════════════════
+function setCtrlFilter(f, btn) {
+  ctrlFilter = f;
+  document.querySelectorAll('.filter-row .filter-btn').forEach(b => {
+    if (b.closest('#tab-controls')) b.classList.remove('active');
+  });
+  btn.classList.add('active');
+  renderControls();
+}
+function filterControls() { renderControls(); }
+
+function renderControls() {
+  const q = document.getElementById('ctrl-search').value.toLowerCase();
+  const body = document.getElementById('ctrl-body');
+  const filtered = CONTROLS.filter(c => {
+    const fMatch = ctrlFilter === 'ALL' || c.proto === ctrlFilter || c.type === ctrlFilter;
+    const tMatch = !q || c.name.toLowerCase().includes(q) || c.addr.toLowerCase().includes(q) ||
+      c.desc.toLowerCase().includes(q) || c.proto.toLowerCase().includes(q);
+    return fMatch && tMatch;
+  });
+  if (!filtered.length) {
+    body.innerHTML = '<tr><td colspan="6" style="text-align:center;color:var(--text3);padding:24px">No matching points.</td></tr>';
+    return;
+  }
+  body.innerHTML = filtered.map(c => `
+    <tr>
+      <td>${c.name}</td>
+      <td>${c.proto}</td>
+      <td class="mono">${c.addr}</td>
+      <td>${c.type}</td>
+      <td style="font-size:12px;color:var(--text3)">${c.range}</td>
+      <td style="font-size:12px">${c.desc}</td>
+    </tr>`).join('');
+}
+
+// ════════════════════════════════════════════════
+// CALCULATORS
+// ════════════════════════════════════════════════
+function showCalc(id, btn) {
+  ['superheat','airflow','fanlaw','refcharge','sensible'].forEach(c => {
+    document.getElementById('calc-'+c).style.display = c === id ? '' : 'none';
+  });
+  document.querySelectorAll('#tab-calc > .filter-row .filter-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  activeCalc = id;
+}
+
+// P-T data: saturation temps at pressure for key refrigerants
+// Simplified polynomial approximation (accurate ±1°F for field use)
+const PT = {
+  R410A: p => -14.55 + 0.2015*p - 0.000183*p*p,
+  R22:   p => -41.35 + 0.3065*p - 0.000452*p*p,
+  R32:   p => -21.22 + 0.2312*p - 0.000280*p*p,
+  R454B: p => -15.30 + 0.2041*p - 0.000190*p*p,
+  R407C: p => -19.10 + 0.2250*p - 0.000260*p*p,
+};
+
+function calcSuperheat() {
+  const ref  = document.getElementById('sh-ref').value;
+  const spsi = parseFloat(document.getElementById('sh-suction-psi').value);
+  const stmp = parseFloat(document.getElementById('sh-suction-temp').value);
+  const lpsi = parseFloat(document.getElementById('sh-liquid-psi').value);
+  const ltmp = parseFloat(document.getElementById('sh-liquid-temp').value);
+  const el = document.getElementById('sh-result');
+
+  if (isNaN(spsi) || isNaN(stmp)) { el.innerHTML = '<div class="result-box" style="color:var(--yellow)">Enter suction pressure and temperature to calculate superheat.</div>'; return; }
+
+  const satSuction = PT[ref](spsi);
+  const superheat  = stmp - satSuction;
+  let shNote = '';
+  if (superheat < 5)  shNote = '⚠️ Superheat very low — risk of liquid slugging to compressor.';
+  else if (superheat < 8)  shNote = '⚠️ Superheat low — may need TXV adjustment.';
+  else if (superheat <= 15) shNote = '✅ Superheat in normal range (8–15°F for TXV).';
+  else if (superheat <= 25) shNote = '⚠️ Superheat elevated — check airflow and refrigerant charge.';
+  else shNote = '❌ Superheat high — likely undercharged or TXV restriction.';
+
+  let scHtml = '';
+  if (!isNaN(lpsi) && !isNaN(ltmp)) {
+    const satLiquid  = PT[ref](lpsi);
+    const subcooling = satLiquid - ltmp;
+    let scNote = '';
+    if (subcooling < 5)  scNote = '⚠️ Subcooling low — possible undercharge or restriction.';
+    else if (subcooling <= 15) scNote = '✅ Subcooling in normal range (10–15°F typical).';
+    else if (subcooling <= 20) scNote = '⚠️ Subcooling elevated — possible overcharge.';
+    else scNote = '❌ Subcooling high — likely overcharged.';
+    scHtml = `
+      <div style="margin-top:12px">
+        <div class="detail-label">Subcooling</div>
+        <div class="result-value">${subcooling.toFixed(1)}°F</div>
+        <div class="result-label">Sat. liquid temp @ ${lpsi} psig (${ref}): ${satLiquid.toFixed(1)}°F</div>
+        <div class="result-note">${scNote}</div>
+      </div>`;
+  }
+
+  el.innerHTML = `<div class="result-box">
+    <div class="detail-label">Superheat</div>
+    <div class="result-value">${superheat.toFixed(1)}°F</div>
+    <div class="result-label">Sat. suction temp @ ${spsi} psig (${ref}): ${satSuction.toFixed(1)}°F</div>
+    <div class="result-note">${shNote}</div>
+    ${scHtml}
+  </div>`;
+}
+
+function setAirflowMode(m, btn) {
+  airflowMode = m;
+  document.getElementById('af-sp').style.display   = m === 'sp' ? '' : 'none';
+  document.getElementById('af-heat').style.display = m === 'heat' ? '' : 'none';
+  document.querySelectorAll('#calc-airflow .filter-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+}
+
+function calcAirflow() {
+  const el = document.getElementById('af-result');
+  if (airflowMode === 'heat') {
+    const sat = parseFloat(document.getElementById('af-sat').value);
+    const rat = parseFloat(document.getElementById('af-rat').value);
+    const btu = parseFloat(document.getElementById('af-btu').value);
+    if (isNaN(sat)||isNaN(rat)||isNaN(btu)) { el.innerHTML='<div class="result-box" style="color:var(--yellow)">Enter all fields.</div>'; return; }
+    const dt  = rat - sat;
+    const cfm = btu / (dt * 1.08);
+    el.innerHTML = `<div class="result-box">
+      <div class="result-value">${Math.round(cfm).toLocaleString()} CFM</div>
+      <div class="result-label">ΔT = ${dt.toFixed(1)}°F &nbsp;·&nbsp; Formula: BTU ÷ (ΔT × 1.08)</div>
+    </div>`;
+  } else {
+    const designCFM = parseFloat(document.getElementById('af-design-cfm').value);
+    const esp       = parseFloat(document.getElementById('af-esp').value);
+    el.innerHTML = `<div class="result-box">
+      <div class="result-label">Use the heat rise method for precise CFM, or read from the unit's fan performance table using measured ESP and RPM.</div>
+      ${!isNaN(designCFM) && !isNaN(esp) ? `<div class="result-note mt8">At ${esp}" w.c. ESP — verify against unit fan curve in the engineering guide for your model series. Design CFM: ${designCFM.toLocaleString()}.</div>` : ''}
+    </div>`;
+  }
+}
+
+function calcFanLaw() {
+  const r1 = parseFloat(document.getElementById('fl-rpm1').value);
+  const r2 = parseFloat(document.getElementById('fl-rpm2').value);
+  const q1 = parseFloat(document.getElementById('fl-cfm1').value);
+  const p1 = parseFloat(document.getElementById('fl-sp1').value);
+  const w1 = parseFloat(document.getElementById('fl-bhp1').value);
+  const el = document.getElementById('fl-result');
+  if (isNaN(r1)||isNaN(r2)) { el.innerHTML='<div class="result-box" style="color:var(--yellow)">Enter original and new RPM.</div>'; return; }
+  const ratio = r2/r1;
+  const q2 = isNaN(q1) ? null : q1 * ratio;
+  const p2 = isNaN(p1) ? null : p1 * ratio*ratio;
+  const w2 = isNaN(w1) ? null : w1 * ratio*ratio*ratio;
+  el.innerHTML = `<div class="result-box">
+    <div class="calc-grid">
+      ${q2!==null?`<div><div class="detail-label">New CFM (Q₂)</div><div class="result-value" style="font-size:22px">${Math.round(q2).toLocaleString()}</div></div>`:''}
+      ${p2!==null?`<div><div class="detail-label">New Static (P₂)</div><div class="result-value" style="font-size:22px">${p2.toFixed(2)}" w.c.</div></div>`:''}
+      ${w2!==null?`<div><div class="detail-label">New BHP (W₂)</div><div class="result-value" style="font-size:22px">${w2.toFixed(2)}</div></div>`:''}
+      <div><div class="detail-label">Speed Ratio</div><div class="result-value" style="font-size:22px">${ratio.toFixed(3)}</div></div>
+    </div>
+    <div class="result-note mt8">Fan Law 1: Q₂ = Q₁×(N₂/N₁) &nbsp;·&nbsp; Law 2: P₂ = P₁×(N₂/N₁)² &nbsp;·&nbsp; Law 3: W₂ = W₁×(N₂/N₁)³</div>
+  </div>`;
+}
+
+function calcRefCharge() {
+  const lllen   = parseFloat(document.getElementById('rc-lllen').value);
+  const llod    = parseFloat(document.getElementById('rc-llod').value);
+  const factory = parseFloat(document.getElementById('rc-factory').value);
+  const el = document.getElementById('rc-result');
+  if (isNaN(lllen)) { el.innerHTML='<div class="result-box" style="color:var(--yellow)">Enter liquid line length.</div>'; return; }
+
+  // oz/ft for liquid line by line OD (approximate for R-410A)
+  const ozPerFt = { 0.375: 0.20, 0.5: 0.36, 0.625: 0.57, 0.75: 0.82 };
+  const addOz   = lllen * (ozPerFt[llod] || 0.36);
+  const total   = isNaN(factory) ? null : factory + addOz;
+
+  el.innerHTML = `<div class="result-box">
+    <div class="detail-label">Line Set Correction (add to factory charge)</div>
+    <div class="result-value">+${addOz.toFixed(1)} oz</div>
+    ${total ? `<div class="result-label">Estimated total charge: <strong>${total.toFixed(1)} oz (${(total/16).toFixed(2)} lb)</strong></div>` : ''}
+    <div class="result-note mt8">⚠️ Always verify against AAON charge chart for your model and ambient. ±2 oz field tolerance. Weigh in refrigerant; do not rely on pressures alone for initial charge.</div>
+  </div>`;
+}
+
+function calcSensible() {
+  const sat   = parseFloat(document.getElementById('sen-sat').value);
+  const rat   = parseFloat(document.getElementById('sen-rat').value);
+  const cfm   = parseFloat(document.getElementById('sen-cfm').value);
+  const total = parseFloat(document.getElementById('sen-total').value);
+  const el    = document.getElementById('sen-result');
+  if (isNaN(sat)||isNaN(rat)||isNaN(cfm)) { el.innerHTML='<div class="result-box" style="color:var(--yellow)">Enter supply temp, return temp, and CFM.</div>'; return; }
+  const dt         = rat - sat;
+  const sensible   = 1.08 * cfm * dt;
+  const shr        = (!isNaN(total) && total > 0) ? (sensible/total) : null;
+  el.innerHTML = `<div class="result-box">
+    <div class="calc-grid">
+      <div><div class="detail-label">Sensible Capacity</div><div class="result-value" style="font-size:22px">${Math.round(sensible).toLocaleString()} BTU/hr</div></div>
+      ${shr ? `<div><div class="detail-label">Sensible Heat Ratio</div><div class="result-value" style="font-size:22px">${shr.toFixed(2)}</div></div>` : ''}
+    </div>
+    <div class="result-note mt8">Formula: 1.08 × CFM × ΔT &nbsp;·&nbsp; ΔT = ${dt.toFixed(1)}°F &nbsp;·&nbsp; CFM = ${cfm.toLocaleString()}
+    ${shr ? `<br>SHR normal range: 0.70–0.85 (lower = more latent removal)` : ''}</div>
+  </div>`;
+}
+
+// ════════════════════════════════════════════════
+// COMMISSIONING
+// ════════════════════════════════════════════════
+function loadChecklist(id, btn) {
+  activeChecklist = id;
+  if (!checklistState[id]) checklistState[id] = {};
+  document.querySelectorAll('#commission-filters .filter-btn').forEach(b => b.classList.remove('active'));
+  if (btn) btn.classList.add('active');
+  renderChecklist();
+}
+
+function renderChecklist() {
+  const items = CHECKLISTS[activeChecklist];
+  const state = checklistState[activeChecklist] || {};
+  const done  = items.filter((_, i) => state[i]).length;
+  const pct   = Math.round((done / items.length) * 100);
+
+  document.getElementById('commission-progress-text').textContent = `${done} of ${items.length} complete`;
+  document.getElementById('commission-progress-fill').style.width = pct + '%';
+
+  document.getElementById('checklist-container').innerHTML = items.map((item, i) => `
+    <div class="checklist-item ${state[i] ? 'checked' : ''}" id="cli-${i}">
+      <input type="checkbox" id="chk-${i}" ${state[i] ? 'checked' : ''} onchange="toggleCheckItem(${i})">
+      <label for="chk-${i}">${item}</label>
+    </div>
+  `).join('');
+}
+
+function toggleCheckItem(i) {
+  if (!checklistState[activeChecklist]) checklistState[activeChecklist] = {};
+  checklistState[activeChecklist][i] = !checklistState[activeChecklist][i];
+  renderChecklist();
+}
+
+function resetChecklist() {
+  checklistState[activeChecklist] = {};
+  renderChecklist();
+}
+
+function printChecklist() {
+  const items = CHECKLISTS[activeChecklist];
+  const state = checklistState[activeChecklist] || {};
+  const title = document.querySelector('#commission-filters .filter-btn.active').textContent;
+  const rows  = items.map((item,i) => `<tr><td style="width:30px;text-align:center">${state[i]?'☑':'☐'}</td><td>${item}</td></tr>`).join('');
+  const win   = window.open('','_blank');
+  win.document.write(`<html><head><title>AAONAssist — ${title}</title>
+    <style>body{font-family:sans-serif;font-size:13px;padding:20px}table{width:100%;border-collapse:collapse}
+    td{padding:6px 8px;border-bottom:1px solid #ddd}h2{margin-bottom:4px}p{color:#666;font-size:12px;margin-bottom:16px}</style>
+    </head><body><h2>AAONAssist — ${title} Checklist</h2><p>Printed: ${new Date().toLocaleString()}</p>
+    <table>${rows}</table></body></html>`);
+  win.print();
+}
+
+// ════════════════════════════════════════════════
+// INIT
+// ════════════════════════════════════════════════
+renderFaults();
+initDiag();
+renderControls();
+loadChecklist('pre');
+</script>
+</body>
+</html>

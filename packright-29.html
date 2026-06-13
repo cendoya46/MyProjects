@@ -1,0 +1,2443 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>PackRight — Activity Checklist Manager</title>
+<style>
+  :root {
+    --navy: #0F1B2D;
+    --navy-mid: #162438;
+    --navy-light: #1E3350;
+    --navy-card: #1A2D45;
+    --amber: #E8A838;
+    --amber-dim: #C48A20;
+    --amber-glow: rgba(232,168,56,0.12);
+    --text: #EDF2F7;
+    --text-dim: #8FA3BC;
+    --text-muted: #5A7A9A;
+    --green: #4CAF82;
+    --red: #E05252;
+    --border: rgba(232,168,56,0.15);
+    --radius: 12px;
+    --radius-sm: 8px;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+  html, body { height: 100%; background: var(--navy); color: var(--text); font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; overflow-x: hidden; }
+
+  /* ── HEADER ── */
+  #app-header {
+    background: var(--navy-mid);
+    border-bottom: 2px solid var(--amber);
+    padding: 14px 20px;
+    display: flex; align-items: center; gap: 12px;
+    position: sticky; top: 0; z-index: 100;
+  }
+  #back-btn {
+    display: none;
+    background: none; border: none; color: var(--amber);
+    font-size: 22px; cursor: pointer; padding: 4px 8px 4px 0;
+  }
+  #app-title { font-size: 20px; font-weight: 700; letter-spacing: 0.5px; }
+  #app-title span { color: var(--amber); }
+  #header-actions { margin-left: auto; display: flex; gap: 8px; }
+  .hdr-btn {
+    background: var(--amber-glow); border: 1px solid var(--border);
+    color: var(--amber); border-radius: var(--radius-sm);
+    padding: 7px 13px; font-size: 13px; cursor: pointer; white-space: nowrap;
+  }
+  .hdr-btn:active { opacity: 0.7; }
+
+  /* ── SCREENS ── */
+  .screen { display: none; min-height: calc(100vh - 57px); }
+  .screen.active { display: block; }
+
+  /* ── HOME ── */
+  #home-screen { padding: 20px; }
+  .section-label {
+    font-size: 11px; letter-spacing: 1.5px; text-transform: uppercase;
+    color: var(--amber); margin-bottom: 14px; display: flex; align-items: center; gap: 8px;
+  }
+  .section-label::after { content: ''; flex: 1; height: 1px; background: var(--border); }
+
+  .activity-grid {
+    display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+    gap: 12px; margin-bottom: 28px;
+  }
+  .activity-card {
+    background: var(--navy-card); border: 1px solid var(--border);
+    border-radius: var(--radius); padding: 18px 14px;
+    cursor: pointer; transition: border-color 0.2s, transform 0.1s;
+    display: flex; flex-direction: column; align-items: center; gap: 10px; text-align: center;
+  }
+  .activity-card:active { transform: scale(0.97); }
+  .activity-card:hover { border-color: var(--amber); }
+  .activity-card .icon { font-size: 32px; line-height: 1; }
+  .activity-card .name { font-size: 13px; font-weight: 600; color: var(--text); }
+  .activity-card .count { font-size: 11px; color: var(--text-muted); }
+
+  /* saved trips */
+  .trip-list { display: flex; flex-direction: column; gap: 10px; margin-bottom: 28px; }
+  .trip-card {
+    background: var(--navy-card); border: 1px solid var(--border);
+    border-radius: var(--radius); padding: 14px 16px;
+    display: flex; align-items: center; gap: 12px; cursor: pointer;
+  }
+  .trip-card:hover { border-color: var(--amber); }
+  .trip-icon { font-size: 22px; }
+  .trip-info { flex: 1; min-width: 0; }
+  .trip-name { font-size: 15px; font-weight: 600; }
+  .trip-meta { font-size: 12px; color: var(--text-muted); margin-top: 2px; }
+  .trip-progress { text-align: right; }
+  .trip-pct { font-size: 18px; font-weight: 700; color: var(--amber); }
+  .trip-pct-label { font-size: 10px; color: var(--text-muted); }
+  .trip-del { background: none; border: none; color: var(--text-muted); font-size: 18px; cursor: pointer; padding: 4px 8px; }
+  .trip-del:hover { color: var(--red); }
+  .empty-state { color: var(--text-muted); font-size: 14px; text-align: center; padding: 24px; border: 1px dashed var(--border); border-radius: var(--radius); }
+
+  /* ── CHECKLIST SCREEN ── */
+  #checklist-screen { padding: 0; }
+  #cl-hero {
+    background: var(--navy-mid); padding: 20px;
+    border-bottom: 1px solid var(--border);
+  }
+  #cl-hero-top { display: flex; align-items: center; gap: 12px; margin-bottom: 12px; }
+  #cl-hero-icon { font-size: 36px; }
+  #cl-hero-info { flex: 1; }
+  #cl-title-input {
+    background: none; border: none; color: var(--text);
+    font-size: 20px; font-weight: 700; width: 100%; outline: none;
+  }
+  #cl-subtitle { font-size: 13px; color: var(--text-muted); margin-top: 2px; }
+  #cl-progress-bar { height: 4px; background: var(--navy-light); border-radius: 2px; margin-bottom: 12px; }
+  #cl-progress-fill { height: 4px; background: var(--amber); border-radius: 2px; transition: width 0.3s; width: 0%; }
+  #cl-stats { display: flex; gap: 16px; font-size: 12px; color: var(--text-muted); }
+  #cl-stats span { color: var(--amber); font-weight: 600; }
+
+  #cl-toolbar {
+    display: flex; gap: 8px; padding: 12px 16px;
+    background: var(--navy-mid); border-bottom: 1px solid var(--border);
+    flex-wrap: wrap;
+  }
+  .tb-btn {
+    background: var(--amber-glow); border: 1px solid var(--border);
+    color: var(--text-dim); border-radius: var(--radius-sm);
+    padding: 7px 12px; font-size: 12px; cursor: pointer; white-space: nowrap;
+  }
+  .tb-btn:hover { border-color: var(--amber); color: var(--amber); }
+  .tb-btn.primary { background: var(--amber); color: var(--navy); border-color: var(--amber); font-weight: 700; }
+
+  /* category sections */
+  #cl-body { padding: 12px 16px 100px; }
+  .cat-section { margin-bottom: 20px; }
+  .cat-header {
+    display: flex; align-items: center; gap: 8px;
+    font-size: 11px; letter-spacing: 1.2px; text-transform: uppercase;
+    color: var(--text-muted); margin-bottom: 8px; cursor: pointer;
+  }
+  .cat-header .cat-icon { font-size: 14px; }
+  .cat-collapse { margin-left: auto; font-size: 16px; color: var(--text-muted); }
+
+  .item-list { display: flex; flex-direction: column; gap: 4px; }
+  .cl-item {
+    display: flex; align-items: center; gap: 10px;
+    background: var(--navy-card); border: 1px solid transparent;
+    border-radius: var(--radius-sm); padding: 10px 12px;
+    transition: border-color 0.15s;
+  }
+  .cl-item.checked { opacity: 0.55; }
+  .cl-item:hover { border-color: var(--border); }
+  .item-check {
+    width: 22px; height: 22px; border-radius: 6px;
+    border: 2px solid var(--text-muted); background: none;
+    cursor: pointer; flex-shrink: 0; display: flex; align-items: center; justify-content: center;
+    transition: background 0.15s, border-color 0.15s;
+  }
+  .cl-item.checked .item-check { background: var(--green); border-color: var(--green); }
+  .item-check::after { content: '✓'; color: white; font-size: 13px; display: none; font-weight: 700; }
+  .cl-item.checked .item-check::after { display: block; }
+  .item-text {
+    flex: 1; font-size: 14px; background: none; border: none;
+    color: var(--text); outline: none; font-family: inherit;
+  }
+  .cl-item.checked .item-text { text-decoration: line-through; color: var(--text-muted); }
+  .item-qty {
+    font-size: 12px; color: var(--text-muted);
+    background: var(--navy-light); border: none; color: var(--text-dim);
+    border-radius: 4px; padding: 2px 6px; width: 48px; text-align: center;
+    font-family: 'Courier New', monospace; outline: none;
+  }
+  .item-del { background: none; border: none; color: var(--text-muted); cursor: pointer; font-size: 16px; padding: 2px 4px; }
+  .item-del:hover { color: var(--red); }
+
+  /* add item row */
+  .add-item-row {
+    display: flex; gap: 8px; margin-top: 8px; align-items: center;
+  }
+  .add-item-input {
+    flex: 1; background: var(--navy-light); border: 1px solid var(--border);
+    color: var(--text); border-radius: var(--radius-sm); padding: 9px 12px;
+    font-size: 14px; outline: none; font-family: inherit;
+  }
+  .add-item-input:focus { border-color: var(--amber); }
+  .add-item-btn {
+    background: var(--amber); color: var(--navy);
+    border: none; border-radius: var(--radius-sm);
+    padding: 9px 14px; font-size: 18px; cursor: pointer; font-weight: 700;
+  }
+
+  /* library picker */
+  #library-panel {
+    display: none; position: fixed; bottom: 0; left: 0; right: 0;
+    background: var(--navy-mid); border-top: 2px solid var(--amber);
+    padding: 16px; z-index: 200; max-height: 60vh; overflow-y: auto;
+    border-radius: 16px 16px 0 0;
+  }
+  #library-panel.open { display: block; }
+  #library-panel h3 { font-size: 14px; color: var(--amber); margin-bottom: 12px; }
+  .lib-category { margin-bottom: 12px; }
+  .lib-cat-name { font-size: 11px; text-transform: uppercase; letter-spacing: 1px; color: var(--text-muted); margin-bottom: 6px; }
+  .lib-items { display: flex; flex-wrap: wrap; gap: 6px; }
+  .lib-item {
+    background: var(--navy-card); border: 1px solid var(--border);
+    border-radius: 20px; padding: 5px 12px; font-size: 13px; cursor: pointer;
+  }
+  .lib-item:hover { border-color: var(--amber); color: var(--amber); }
+  .lib-close { float: right; background: none; border: none; color: var(--text-muted); font-size: 20px; cursor: pointer; }
+
+  /* overlay */
+  #overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 150; }
+  #overlay.open { display: block; }
+
+  /* ── MODALS ── */
+  .modal {
+    display: none; position: fixed; inset: 0; z-index: 300;
+    align-items: center; justify-content: center; padding: 20px;
+  }
+  .modal.open { display: flex; }
+  .modal-box {
+    background: var(--navy-mid); border: 1px solid var(--border);
+    border-radius: var(--radius); padding: 24px; width: 100%; max-width: 480px;
+    max-height: 85vh; overflow-y: auto;
+  }
+  .modal-box h2 { font-size: 18px; margin-bottom: 16px; color: var(--amber); }
+  .modal-backdrop { position: fixed; inset: 0; background: rgba(0,0,0,0.6); z-index: 299; }
+  .form-group { margin-bottom: 14px; }
+  .form-group label { display: block; font-size: 12px; color: var(--text-muted); margin-bottom: 6px; text-transform: uppercase; letter-spacing: 0.8px; }
+  .form-input {
+    width: 100%; background: var(--navy-light); border: 1px solid var(--border);
+    color: var(--text); border-radius: var(--radius-sm); padding: 10px 12px;
+    font-size: 14px; outline: none; font-family: inherit;
+  }
+  .form-input:focus { border-color: var(--amber); }
+  .modal-actions { display: flex; gap: 10px; margin-top: 20px; justify-content: flex-end; }
+  .btn { padding: 10px 20px; border-radius: var(--radius-sm); font-size: 14px; cursor: pointer; border: none; font-weight: 600; }
+  .btn-primary { background: var(--amber); color: var(--navy); }
+  .btn-ghost { background: none; border: 1px solid var(--border); color: var(--text-dim); }
+  .btn:active { opacity: 0.8; }
+
+  /* destination results */
+  #dest-results { margin-top: 16px; }
+  .dest-section { margin-bottom: 16px; }
+  .dest-section h4 { font-size: 13px; color: var(--amber); margin-bottom: 8px; display: flex; align-items: center; gap: 6px; }
+  .dest-facts { display: flex; flex-wrap: wrap; gap: 8px; }
+  .dest-fact {
+    background: var(--navy-card); border: 1px solid var(--border);
+    border-radius: var(--radius-sm); padding: 8px 12px;
+    font-size: 12px;
+  }
+  .dest-fact .label { color: var(--text-muted); display: block; font-size: 10px; text-transform: uppercase; }
+  .dest-fact .value { color: var(--text); font-weight: 600; margin-top: 2px; }
+  .weather-days { display: flex; gap: 8px; overflow-x: auto; padding-bottom: 4px; }
+  .weather-day {
+    background: var(--navy-card); border: 1px solid var(--border);
+    border-radius: var(--radius-sm); padding: 8px 10px;
+    text-align: center; min-width: 56px; flex-shrink: 0;
+  }
+  .weather-day .wd-date { font-size: 10px; color: var(--text-muted); }
+  .weather-day .wd-icon { font-size: 20px; margin: 4px 0; }
+  .weather-day .wd-temp { font-size: 12px; font-weight: 600; }
+  .suggested-items { display: flex; flex-wrap: wrap; gap: 6px; }
+  .sug-item {
+    background: var(--amber-glow); border: 1px solid var(--border);
+    border-radius: 20px; padding: 5px 12px; font-size: 13px;
+    cursor: pointer; transition: border-color 0.15s;
+  }
+  .sug-item:hover { border-color: var(--amber); }
+  .sug-item.added { background: var(--green); color: var(--navy); border-color: var(--green); font-weight: 600; }
+  #dest-add-all { margin-top: 10px; }
+
+  /* recipe */
+  #recipe-results { margin-top: 16px; }
+  .recipe-ingredient {
+    display: flex; align-items: center; gap: 8px;
+    padding: 7px 0; border-bottom: 1px solid var(--border); font-size: 14px;
+  }
+  .recipe-ingredient input[type=checkbox] { width: 16px; height: 16px; accent-color: var(--amber); }
+
+  /* spinner */
+  .spinner {
+    display: inline-block; width: 18px; height: 18px;
+    border: 2px solid var(--border); border-top-color: var(--amber);
+    border-radius: 50%; animation: spin 0.7s linear infinite; vertical-align: middle;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* status toast */
+  #toast {
+    position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%);
+    background: var(--navy-light); border: 1px solid var(--amber);
+    color: var(--text); padding: 10px 20px; border-radius: 24px;
+    font-size: 13px; z-index: 500; opacity: 0; transition: opacity 0.3s;
+    pointer-events: none; white-space: nowrap;
+  }
+  #toast.show { opacity: 1; }
+
+  /* templates screen */
+  #templates-screen { padding: 20px; }
+  .template-card {
+    background: var(--navy-card); border: 1px solid var(--border);
+    border-radius: var(--radius); padding: 14px 16px; margin-bottom: 10px;
+    display: flex; align-items: center; gap: 12px;
+  }
+  .template-card .t-icon { font-size: 24px; }
+  .template-card .t-info { flex: 1; }
+  .template-card .t-name { font-size: 15px; font-weight: 600; }
+  .template-card .t-meta { font-size: 12px; color: var(--text-muted); margin-top: 2px; }
+  .template-card .t-actions { display: flex; gap: 6px; }
+  .t-action-btn {
+    background: var(--amber-glow); border: 1px solid var(--border);
+    color: var(--text-dim); border-radius: var(--radius-sm);
+    padding: 6px 10px; font-size: 12px; cursor: pointer;
+  }
+  .t-action-btn:hover { border-color: var(--amber); color: var(--amber); }
+  .t-action-btn.danger:hover { border-color: var(--red); color: var(--red); }
+
+  @media (max-width: 400px) {
+    .activity-grid { grid-template-columns: repeat(2, 1fr); }
+  }
+</style>
+</head>
+<body>
+
+<!-- HEADER -->
+<div id="app-header">
+  <button id="back-btn" onclick="goHome()">‹</button>
+  <div id="app-title">Pack<span>Right</span></div>
+  <div id="header-actions" id="hdr-actions"></div>
+</div>
+
+<!-- TOAST -->
+<div id="toast"></div>
+
+<!-- OVERLAY -->
+<div id="overlay" onclick="closeLibrary()"></div>
+
+<!-- ═══════════════════════════════════════════════ HOME SCREEN -->
+<div id="home-screen" class="screen active">
+  <p class="section-label" style="margin-top:4px;">Activities</p>
+  <div class="activity-grid" id="activity-grid"></div>
+
+  <p class="section-label">My Trips & Lists</p>
+  <div class="trip-list" id="trip-list"></div>
+
+  <p class="section-label">Saved Templates</p>
+  <button class="tb-btn" style="margin-bottom:12px;" onclick="showScreen('templates-screen'); renderTemplates();">📋 Manage Templates</button>
+</div>
+
+<!-- ═══════════════════════════════════════════════ CHECKLIST SCREEN -->
+<div id="checklist-screen" class="screen">
+  <div id="cl-hero">
+    <div id="cl-hero-top">
+      <div id="cl-hero-icon">🏕️</div>
+      <div id="cl-hero-info">
+        <input id="cl-title-input" type="text" value="My Checklist" onchange="saveCurrentTrip()">
+        <div id="cl-subtitle">0 of 0 items complete</div>
+      </div>
+    </div>
+    <div id="cl-progress-bar"><div id="cl-progress-fill"></div></div>
+    <div id="cl-stats">Checked: <span id="stat-checked">0</span> &nbsp;|&nbsp; Remaining: <span id="stat-remaining">0</span> &nbsp;|&nbsp; Total: <span id="stat-total">0</span></div>
+  </div>
+
+  <div id="cl-toolbar">
+    <button class="tb-btn" onclick="openLibrary()">＋ From Library</button>
+    <button class="tb-btn" id="dest-btn" onclick="openDestModal()">🌍 Destination Info</button>
+    <button class="tb-btn" id="recipe-btn" style="display:none" onclick="openRecipeModal()">🍽️ Add Recipe</button>
+    <button class="tb-btn" id="conv-btn" style="display:none" onclick="openConverter()">⚖️ Convert</button>
+    <button class="tb-btn" onclick="uncheckAll()">↺ Uncheck All</button>
+    <button class="tb-btn primary" onclick="saveAsTemplate()">💾 Save Template</button>
+  </div>
+
+  <div id="cl-body"></div>
+</div>
+
+<!-- ═══════════════════════════════════════════════ TEMPLATES SCREEN -->
+<div id="templates-screen" class="screen">
+  <div id="templates-list"></div>
+</div>
+
+<!-- ═══════════════════════════════════════════════ LIBRARY PANEL -->
+<div id="library-panel">
+  <button class="lib-close" onclick="closeLibrary()">×</button>
+  <h3>📦 Item Library — add to your checklist</h3>
+  <div id="library-content"></div>
+</div>
+
+<!-- ═══════════════════════════════════════════════ DESTINATION MODAL -->
+<div class="modal-backdrop" id="dest-backdrop" style="display:none" onclick="closeDestModal()"></div>
+<div class="modal" id="dest-modal">
+  <div class="modal-box">
+    <h2>🌍 Destination Planner</h2>
+    <div class="form-group">
+      <label>City &amp; State, or Country</label>
+      <input class="form-input" id="dest-input" placeholder="e.g. Rockwood, PA  or  Paris  or  Japan" onkeydown="if(event.key==='Enter')lookupDestination()">
+    </div>
+    <div class="form-group">
+      <label>Travel Dates (optional)</label>
+      <div style="display:flex;gap:8px;">
+        <input class="form-input" type="date" id="dest-from" style="flex:1">
+        <input class="form-input" type="date" id="dest-to" style="flex:1">
+      </div>
+    </div>
+    <button class="btn btn-primary" onclick="lookupDestination()">🔍 Look Up Destination</button>
+    <div id="dest-results"></div>
+    <div class="modal-actions">
+      <button class="btn btn-ghost" onclick="closeDestModal()">Close</button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════ RECIPE MODAL -->
+<div class="modal-backdrop" id="recipe-backdrop" style="display:none" onclick="closeRecipeModal()"></div>
+<div class="modal" id="recipe-modal">
+  <div class="modal-box">
+    <h2>🍽️ Add Recipe to Shopping List</h2>
+
+    <!-- Existing recipes on this list -->
+    <div id="recipe-existing-box" style="display:none;margin-bottom:14px;">
+      <div style="font-size:11px;letter-spacing:1px;text-transform:uppercase;color:var(--amber);margin-bottom:8px;">Recipes on this list</div>
+      <div id="recipe-existing-list"></div>
+    </div>
+
+    <!-- Tab switcher -->
+    <div style="display:flex;gap:0;margin-bottom:14px;border:1px solid var(--border);border-radius:var(--radius-sm);overflow:hidden;">
+      <button id="tab-url-btn" onclick="switchRecipeTab('url')"
+        style="flex:1;padding:9px;font-size:13px;border:none;cursor:pointer;background:var(--amber);color:var(--navy);font-weight:700;">
+        🔗 From URL
+      </button>
+      <button id="tab-paste-btn" onclick="switchRecipeTab('paste')"
+        style="flex:1;padding:9px;font-size:13px;border:none;cursor:pointer;background:var(--navy-light);color:var(--text-dim);">
+        📋 Paste Text
+      </button>
+    </div>
+
+    <!-- URL tab -->
+    <div id="tab-url">
+      <p style="font-size:13px;color:var(--text-muted);margin-bottom:10px;">Works with AllRecipes, Food Network, BBC Good Food, NYT Cooking, and most recipe blogs.</p>
+      <div class="form-group">
+        <label>Recipe URL</label>
+        <div style="display:flex;gap:8px;">
+          <input class="form-input" id="recipe-url-input" placeholder="https://www.allrecipes.com/recipe/..." style="flex:1" onkeydown="if(event.key==='Enter')fetchRecipe()">
+          <button class="btn btn-primary" style="white-space:nowrap;" onclick="fetchRecipe()">Load</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Paste tab -->
+    <div id="tab-paste" style="display:none;">
+      <p style="font-size:13px;color:var(--text-muted);margin-bottom:10px;">Paste the ingredient list from any recipe. Put each ingredient on its own line.</p>
+      <div class="form-group">
+        <label>Recipe Name (optional)</label>
+        <input class="form-input" id="paste-recipe-name" placeholder="e.g. Grandma's Lasagna">
+      </div>
+      <div class="form-group">
+        <label>Ingredients (one per line)</label>
+        <textarea class="form-input" id="paste-recipe-text" rows="8"
+          placeholder="1 cup flour&#10;2 eggs&#10;1/2 cup milk&#10;1 tsp salt&#10;..."
+          style="resize:vertical;font-family:inherit;line-height:1.6;"></textarea>
+      </div>
+      <button class="btn btn-primary" onclick="parseTextRecipe()">Parse Ingredients</button>
+    </div>
+
+    <div id="recipe-results"></div>
+    <div class="modal-actions" id="recipe-modal-actions" style="display:none;">
+      <button class="btn btn-ghost" onclick="closeRecipeModal()">Cancel</button>
+      <button class="btn btn-primary" onclick="addSelectedIngredients()">Add to Shopping List</button>
+    </div>
+    <div class="modal-actions" id="recipe-close-actions">
+      <button class="btn btn-ghost" onclick="closeRecipeModal()">Done</button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════ UNIT CONVERTER MODAL -->
+<div class="modal-backdrop" id="conv-backdrop" style="display:none" onclick="closeConverter()"></div>
+<div class="modal" id="conv-modal">
+  <div class="modal-box" style="max-width:400px;">
+    <h2>⚖️ Unit Converter</h2>
+    <div class="form-group">
+      <label>Amount</label>
+      <input class="form-input" id="conv-amount" type="number" step="any" placeholder="e.g. 3" oninput="runConverter()">
+    </div>
+    <div class="form-group">
+      <label>From</label>
+      <select class="form-input" id="conv-from" onchange="runConverter()"></select>
+    </div>
+    <div class="form-group">
+      <label>To</label>
+      <select class="form-input" id="conv-to" onchange="runConverter()"></select>
+    </div>
+    <div id="conv-result" style="font-size:22px;font-weight:700;color:var(--amber);text-align:center;padding:14px 0;min-height:52px;"></div>
+    <div id="conv-chart" style="font-size:12px;color:var(--text-muted);border-top:1px solid var(--border);padding-top:12px;margin-top:4px;"></div>
+    <div class="modal-actions">
+      <button class="btn btn-ghost" onclick="closeConverter()">Close</button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════ NEW TRIP MODAL -->
+<div class="modal-backdrop" id="newtrip-backdrop" style="display:none" onclick="closeNewTripModal()"></div>
+<div class="modal" id="newtrip-modal">
+  <div class="modal-box">
+    <h2 id="newtrip-title">🧳 Name Your Trip</h2>
+    <div class="form-group">
+      <label>Trip / List Name</label>
+      <input class="form-input" id="newtrip-name" placeholder="e.g. Summer Camping 2025" onkeydown="if(event.key==='Enter')createTrip()">
+    </div>
+    <div class="form-group">
+      <label>Load from template (optional)</label>
+      <select class="form-input" id="newtrip-template">
+        <option value="">— Start with activity defaults —</option>
+      </select>
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-ghost" onclick="closeNewTripModal()">Cancel</button>
+      <button class="btn btn-primary" onclick="createTrip()">Create</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ══════════════════════════════════════════════════════════
+// DATA
+// ══════════════════════════════════════════════════════════
+
+const ACTIVITIES = [
+  { id:'groceries',   name:'Groceries',         icon:'🛒', color:'#4CAF82' },
+  { id:'camping',     name:'Camping – Primitive',icon:'🏕️', color:'#E8A838' },
+  { id:'rv',          name:'RV / Motorhome',     icon:'🚐', color:'#5BA4CF' },
+  { id:'boating',     name:'Boating',            icon:'⛵', color:'#3A9BD5' },
+  { id:'cruise',      name:'Cruise',             icon:'🚢', color:'#6B7FD7' },
+  { id:'flying',      name:'Flying',             icon:'✈️', color:'#9B7FD4' },
+  { id:'travel',      name:'Traveling',          icon:'🌍', color:'#E86A38' },
+  { id:'custom',      name:'Custom List',        icon:'📋', color:'#8FA3BC' },
+];
+
+const DEFAULT_CHECKLISTS = {
+  groceries: [
+    { cat:'🥦 Produce',         items:['Apples','Bananas','Lettuce','Tomatoes','Onions','Garlic','Carrots','Broccoli'] },
+    { cat:'🧀 Dairy & Eggs',    items:['Milk','Eggs','Butter','Cheese','Yogurt'] },
+    { cat:'🥩 Meat & Seafood',  items:['Chicken breast','Ground beef','Salmon'] },
+    { cat:'🥫 Canned & Jarred', items:['Canned tomatoes'] },
+    { cat:'🌾 Dry Goods & Pasta',items:['Pasta','Rice'] },
+    { cat:'🧂 Pantry & Spices', items:['Bread','Olive oil','Salt','Pepper'] },
+    { cat:'🧊 Frozen',          items:['Frozen vegetables','Ice cream'] },
+    { cat:'🥤 Beverages',       items:['Water','Coffee','Juice','Sparkling water'] },
+    { cat:'🛒 Other',           items:['Paper towels','Dish soap','Laundry detergent'] },
+  ],
+  camping: [
+    { cat:'Shelter', items:['Tent','Tent stakes','Ground cloth / tarp','Sleeping bag','Sleeping pad'] },
+    { cat:'Clothing', items:['Moisture-wicking base layers','Fleece or insulating layer','Rain jacket','Hiking boots','Extra socks','Gloves','Beanie / hat','Sun hat'] },
+    { cat:'Navigation', items:['Trail map','Compass','GPS device','Headlamp + extra batteries'] },
+    { cat:'Fire & Cooking', items:['Matches / lighter','Firestarter','Camp stove + fuel','Cookpot','Utensils','Camp mug','Biodegradable soap','Trash bags'] },
+    { cat:'Food & Water', items:['Water filter / purification tablets','Water bottles (2+)','Freeze-dried meals','Trail mix / snacks','Energy bars'] },
+    { cat:'First Aid', items:['First aid kit','Blister treatment','Sunscreen SPF 30+','Insect repellent','Moleskin','Prescription medications'] },
+    { cat:'Tools & Safety', items:['Multi-tool / knife','Paracord (50 ft)','Emergency whistle','Bear canister / hang bag','Trowel for cat holes'] },
+    { cat:'Leave No Trace', items:['Waste bags','Waste bags for pet','Biodegradable toiletries'] },
+  ],
+  rv: [
+    { cat:'Vehicle & Hookups', items:['Shore power cable (30/50 amp)','Surge protector','Water pressure regulator','RV water hose','Sewer hose kit','Sewer hose support','Leveling blocks','Wheel chocks','Stabilizer jacks'] },
+    { cat:'Inside Comfort', items:['Bedding / linens','Towels','Dish soap','Paper towels','Toilet paper (RV-safe)','Holding tank treatment'] },
+    { cat:'Kitchen', items:['Propane canisters','Pots & pans','Dishes & utensils','Can opener','Coffee maker','Dish drying rack'] },
+    { cat:'Clothing', items:['Comfortable clothes for campsite','Rain gear','Layers for cool nights','Swimwear','Sneakers & sandals'] },
+    { cat:'Electronics', items:['Power strip','Phone chargers','Laptop','WiFi booster','Streaming device'] },
+    { cat:'Safety & Tools', items:['Tire pressure gauge','Basic tool kit','Duct tape','WD-40','First aid kit','Propane leak detector','Fire extinguisher','Smoke & CO detector'] },
+    { cat:'Outdoor Living', items:['Awning mat','Folding chairs','Folding table','Outdoor lights','Bug spray','Sunscreen'] },
+    { cat:'Food & Drinks', items:['Pantry staples','Cooler / extra ice','Water (enough for travel days)','Snacks for road'] },
+  ],
+  boating: [
+    { cat:'Safety (Required)', items:['Life jackets (one per person)','Throwable flotation device','Fire extinguisher','Visual distress signals (flares)','Sound device (horn/whistle)','Anchor + line','Bilge pump','Navigation lights'] },
+    { cat:'Navigation', items:['Marine charts','Compass','GPS / chartplotter','VHF radio','Float plan filed with marina'] },
+    { cat:'Clothing & Sun', items:['Non-slip boat shoes','Life jacket','Sunscreen SPF 50+','Polarized sunglasses','Hat','Quick-dry clothing','Windbreaker','Swimwear'] },
+    { cat:'Tools & Maintenance', items:['Spare propeller','Engine oil','Extra fuel','Toolbox','Spare fuses','Rope / dock lines','Fenders'] },
+    { cat:'Food & Comfort', items:['Cooler with ice','Water (extra)','Snacks','Seasickness medication','First aid kit','Sunscreen','Waterproof bag for phone'] },
+    { cat:'Electronics', items:['VHF radio (handheld backup)','Waterproof phone case','Depth finder','Bilge pump (electric backup)'] },
+  ],
+  cruise: [
+    { cat:'Documents', items:['Passport (valid 6+ months)','Cruise booking confirmation','Travel insurance docs','Credit card with no foreign fees','Emergency contact info','Vaccination records if required'] },
+    { cat:'Clothing', items:['Formal night attire','Casual resort wear','Swimwear (2-3 sets)','Sunhat','Comfortable walking shoes','Sandals','Jacket for ship AC','Light rain layer'] },
+    { cat:'Toiletries & Health', items:['Sunscreen SPF 50+','Seasickness medication / patches','Prescription medications (extra supply)','Hand sanitizer','Travel-size toiletries','Lip balm with SPF'] },
+    { cat:'Electronics', items:['Power strip (no surge protector — ships prohibit)','Phone charger','Camera','Portable battery bank','Laptop / tablet','Headphones'] },
+    { cat:'Shore Excursions', items:['Comfortable walking shoes','Daypack / small bag','Cash in local currency','Reef-safe sunscreen','Reusable water bottle','Copy of shore excursion tickets'] },
+    { cat:'Onboard Essentials', items:['Cruise card holder / lanyard','Highlighter for daily newsletter','Reusable tote bag','Laundry bag','Small umbrella','Zip-lock bags'] },
+  ],
+  flying: [
+    { cat:'Documents & ID', items:['Government-issued ID or passport','Boarding pass (printed or app)','TSA PreCheck / Global Entry card','Travel insurance docs','Hotel / rental car confirmations','Visa if required'] },
+    { cat:'Carry-On Essentials', items:['Change of clothes','Laptop','Laptop charger','USB-C cable','Power bank (≤100Wh)','Noise-canceling headphones','Neck pillow','Eye mask','Ear plugs'] },
+    { cat:'Security & TSA', items:['3-1-1 liquids bag (quart-size)','Travel-size toiletries (≤3.4oz)','Remove shoes prep','Shoes easy to slip off','No prohibited items in carry-on'] },
+    { cat:'Health & Comfort', items:['Water bottle (empty for security)','Prescription medications in original bottles','Hand sanitizer (≤3.4oz)','Face mask','Motion sickness medication','Snacks','Lip balm','Hand lotion'] },
+    { cat:'Checked Bag', items:['Luggage locks','Luggage tag with contact info','Packing cubes','Full toiletries kit','Extra medication supply','Formal attire if needed','Adapters / converters'] },
+    { cat:'At Destination', items:['Local currency / travel card','Unlocked phone / SIM plan','Hotel address in local language','Emergency numbers saved'] },
+  ],
+  travel: [
+    { cat:'Documents', items:['Passport','Visa (if required)','Travel insurance policy','Emergency contacts','Accommodation confirmations','Transport bookings'] },
+    { cat:'Money', items:['Local currency','Travel credit/debit card','Backup card (stored separately)','Small bills for tips','Digital wallet setup'] },
+    { cat:'Clothing', items:['Versatile layers','Comfortable walking shoes','1 dressy outfit','Rain layer','Underwear & socks','Quick-dry fabrics'] },
+    { cat:'Health', items:['Travel vaccinations up to date','Prescription medications (extra)','First aid kit','Sunscreen','Insect repellent','Stomach medication','Altitude sickness pills if relevant'] },
+    { cat:'Electronics', items:['Universal travel adapter','Power bank','Phone + charger','Camera','Backup drive or cloud backup'] },
+    { cat:'Connectivity', items:['International SIM or eSIM plan','Offline maps downloaded','VPN app','Translation app (with offline pack)'] },
+    { cat:'Safety', items:['Copies of all docs (cloud + paper)','Hidden money belt','Door alarm for hotel','Travel lock'] },
+    { cat:'Comfort', items:['Neck pillow','Ear plugs','Eye mask','Reusable water bottle','Snacks for travel days','Journal / books'] },
+  ],
+  custom: [
+    { cat:'My Items', items:[] },
+  ],
+};
+
+// Supplemental library items per activity
+const LIBRARY = {
+  groceries: [
+    { cat:'🧂 Pantry & Spices', items:['Flour','Sugar','Baking powder','Vanilla extract','Chocolate chips','Cocoa powder','Yeast','Ketchup','Mustard','Mayo','Hot sauce','Soy sauce','BBQ sauce','Ranch dressing'] },
+    { cat:'🛒 Other',           items:['Chips','Crackers','Nuts','Popcorn','Granola bars','Fruit snacks'] },
+  ],
+  camping: [
+    { cat:'Optional Comfort', items:['Camp chair','Hammock','Portable table','Lantern','Solar charger','Trekking poles','Bug net for hat','Camp pillow','Wool blanket'] },
+    { cat:'Entertainment', items:['Playing cards','Book','Binoculars','Star chart','Journal'] },
+  ],
+  rv: [
+    { cat:'Extras', items:['Bicycles','Kayak / canoe','Hammock','BBQ grill','Camp chairs','Outdoor rug','Solar panel','Generator','Extra propane'] },
+  ],
+  boating: [
+    { cat:'Extras', items:['Fishing rods & tackle','Wakeboard','Tube / towable','Snorkel gear','Underwater camera','Kayak / paddleboard'] },
+  ],
+  cruise: [
+    { cat:'Extras', items:['Magnetic hooks (for cabin walls)','Wrinkle release spray','Over-door organizer','Collapsible bag for souvenirs','Binoculars for scenic days'] },
+  ],
+  flying: [
+    { cat:'Extras', items:['Travel pillow','Compression socks','Melatonin','Reading material','TSA-approved lock','Packing cubes','Luggage scale'] },
+  ],
+  travel: [
+    { cat:'Extras', items:['Microfiber towel','Collapsible water bottle','Packing cubes','Travel umbrella','Safety pins','Sewing kit','Clothes line'] },
+  ],
+  custom: [],
+};
+
+// ══════════════════════════════════════════════════════════
+// STATE
+// ══════════════════════════════════════════════════════════
+let trips = JSON.parse(localStorage.getItem('packright_trips') || '[]');
+let templates = JSON.parse(localStorage.getItem('packright_templates') || '[]');
+let currentTripId = null;
+let pendingActivity = null;
+
+function saveTrips() { localStorage.setItem('packright_trips', JSON.stringify(trips)); }
+function saveTemplates() { localStorage.setItem('packright_templates', JSON.stringify(templates)); }
+
+function getTrip() { return trips.find(t => t.id === currentTripId); }
+
+// ══════════════════════════════════════════════════════════
+// NAVIGATION
+// ══════════════════════════════════════════════════════════
+function showScreen(id) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+  const backBtn = document.getElementById('back-btn');
+  const hdrActions = document.getElementById('header-actions');
+  if (id === 'home-screen') {
+    backBtn.style.display = 'none';
+    hdrActions.innerHTML = '';
+    document.getElementById('app-title').innerHTML = 'Pack<span style="color:var(--amber)">Right</span>';
+    renderHome();
+  } else if (id === 'checklist-screen') {
+    backBtn.style.display = 'block';
+    hdrActions.innerHTML = `<button class="hdr-btn" onclick="exportTrip()">⬆ Export</button>`;
+  } else if (id === 'templates-screen') {
+    backBtn.style.display = 'block';
+    hdrActions.innerHTML = '';
+    document.getElementById('app-title').innerHTML = '📋 Templates';
+  }
+}
+
+function goHome() { showScreen('home-screen'); }
+
+// ══════════════════════════════════════════════════════════
+// HOME
+// ══════════════════════════════════════════════════════════
+function renderHome() {
+  // Activity grid
+  const grid = document.getElementById('activity-grid');
+  grid.innerHTML = ACTIVITIES.map(a => {
+    const count = DEFAULT_CHECKLISTS[a.id]?.reduce((s,c) => s + c.items.length, 0) || 0;
+    return `<div class="activity-card" onclick="startNewTrip('${a.id}')">
+      <div class="icon">${a.icon}</div>
+      <div class="name">${a.name}</div>
+      <div class="count">${count} default items</div>
+    </div>`;
+  }).join('');
+
+  // Trip list
+  const tripList = document.getElementById('trip-list');
+  if (!trips.length) {
+    tripList.innerHTML = `<div class="empty-state">No trips yet. Tap an activity above to start!</div>`;
+  } else {
+    tripList.innerHTML = trips.map(t => {
+      const total = t.categories.reduce((s,c) => s + c.items.length, 0);
+      const checked = t.categories.reduce((s,c) => s + c.items.filter(i => i.checked).length, 0);
+      const pct = total ? Math.round((checked/total)*100) : 0;
+      const act = ACTIVITIES.find(a => a.id === t.activityId) || { icon:'📋' };
+      return `<div class="trip-card" onclick="openTrip('${t.id}')">
+        <div class="trip-icon">${act.icon}</div>
+        <div class="trip-info">
+          <div class="trip-name">${t.name}</div>
+          <div class="trip-meta">${t.activityId} · ${total} items · last edited ${formatDate(t.modified)}</div>
+        </div>
+        <div class="trip-progress">
+          <div class="trip-pct">${pct}%</div>
+          <div class="trip-pct-label">done</div>
+        </div>
+        <button class="trip-del" onclick="event.stopPropagation();deleteTrip('${t.id}')">🗑</button>
+      </div>`;
+    }).join('');
+  }
+}
+
+function formatDate(ts) {
+  if (!ts) return 'recently';
+  const d = new Date(ts);
+  const now = new Date();
+  const diff = Math.floor((now - d) / 86400000);
+  if (diff === 0) return 'today';
+  if (diff === 1) return 'yesterday';
+  return `${diff}d ago`;
+}
+
+function startNewTrip(activityId) {
+  pendingActivity = activityId;
+  const modal = document.getElementById('newtrip-modal');
+  const title = document.getElementById('newtrip-title');
+  const act = ACTIVITIES.find(a => a.id === activityId);
+  title.textContent = `${act.icon} New ${act.name} List`;
+  // populate templates dropdown
+  const sel = document.getElementById('newtrip-template');
+  const relevant = templates.filter(t => t.activityId === activityId);
+  sel.innerHTML = '<option value="">— Start with activity defaults —</option>' +
+    relevant.map(t => `<option value="${t.id}">${t.name}</option>`).join('');
+  document.getElementById('newtrip-name').value = '';
+  document.getElementById('newtrip-backdrop').style.display = 'block';
+  modal.classList.add('open');
+  setTimeout(() => document.getElementById('newtrip-name').focus(), 100);
+}
+
+function closeNewTripModal() {
+  document.getElementById('newtrip-modal').classList.remove('open');
+  document.getElementById('newtrip-backdrop').style.display = 'none';
+}
+
+function createTrip() {
+  const name = document.getElementById('newtrip-name').value.trim() || 'My List';
+  const templateId = document.getElementById('newtrip-template').value;
+  const activityId = pendingActivity;
+  let categories;
+  if (templateId) {
+    const tmpl = templates.find(t => t.id === templateId);
+    categories = JSON.parse(JSON.stringify(tmpl.categories));
+  } else {
+    const defaults = DEFAULT_CHECKLISTS[activityId] || DEFAULT_CHECKLISTS.custom;
+    categories = defaults.map(c => ({
+      cat: c.cat,
+      collapsed: false,
+      items: c.items.map(name => ({ id: uid(), text: name, qty: '', checked: false }))
+    }));
+  }
+  const trip = {
+    id: uid(), activityId, name,
+    categories,
+    created: Date.now(), modified: Date.now()
+  };
+  trips.unshift(trip);
+  saveTrips();
+  closeNewTripModal();
+  openTrip(trip.id);
+}
+
+function openTrip(id) {
+  currentTripId = id;
+  showScreen('checklist-screen');
+  renderChecklist();
+}
+
+function deleteTrip(id) {
+  if (!confirm('Delete this list?')) return;
+  trips = trips.filter(t => t.id !== id);
+  saveTrips();
+  renderHome();
+}
+
+// ══════════════════════════════════════════════════════════
+// CHECKLIST RENDERING
+// ══════════════════════════════════════════════════════════
+function renderChecklist() {
+  const trip = getTrip();
+  if (!trip) return;
+  const act = ACTIVITIES.find(a => a.id === trip.activityId) || { icon:'📋' };
+  document.getElementById('cl-hero-icon').textContent = act.icon;
+  document.getElementById('cl-title-input').value = trip.name;
+  // Show recipe button only for groceries; show dest button only for travel/flying/cruise
+  const isGroceries = trip.activityId === 'groceries';
+  const isTravel = trip.activityId !== 'groceries'; // dest info useful on all non-grocery lists
+  const recipeBtn = document.getElementById('recipe-btn');
+  const destBtn   = document.getElementById('dest-btn');
+  if (recipeBtn) recipeBtn.style.display = isGroceries ? '' : 'none';
+  const convBtn = document.getElementById('conv-btn');
+  if (convBtn) convBtn.style.display = isGroceries ? '' : 'none';
+  if (destBtn)   destBtn.style.display   = isTravel ? '' : 'none';
+  updateStats();
+  const body = document.getElementById('cl-body');
+  body.innerHTML = trip.categories.map((cat, ci) => renderCategory(cat, ci)).join('') +
+    `<div style="margin-top:20px;">
+      <p class="section-label">Add Category</p>
+      <div class="add-item-row">
+        <input class="add-item-input" id="new-cat-input" placeholder="Category name..." onkeydown="if(event.key==='Enter')addCategory()">
+        <button class="add-item-btn" onclick="addCategory()">+</button>
+      </div>
+    </div>`;
+}
+
+function renderCategory(cat, ci) {
+  const items = cat.items.map((item, ii) => renderItem(item, ci, ii)).join('');
+  return `<div class="cat-section" id="cat-${ci}">
+    <div class="cat-header" onclick="toggleCat(${ci})">
+      <span class="cat-icon">📂</span>
+      <span>${cat.cat}</span>
+      <span style="margin-left:4px;color:var(--text-muted);font-size:11px;">(${cat.items.filter(i=>i.checked).length}/${cat.items.length})</span>
+      <span class="cat-collapse">${cat.collapsed ? '▶' : '▾'}</span>
+    </div>
+    ${cat.collapsed ? '' : `<div class="item-list" id="items-${ci}">${items}
+      <div class="add-item-row">
+        <input class="add-item-input" placeholder="Add item..." onkeydown="if(event.key==='Enter')addItem(${ci},this)">
+        <button class="add-item-btn" onclick="addItem(${ci},this.previousElementSibling)">+</button>
+      </div>
+    </div>`}
+  </div>`;
+}
+
+function renderItem(item, ci, ii) {
+  return `<div class="cl-item${item.checked ? ' checked' : ''}" id="item-${ci}-${ii}">
+    <div class="item-check" onclick="toggleItem(${ci},${ii})"></div>
+    <input class="item-text" value="${escHtml(item.text)}" onchange="updateItemText(${ci},${ii},this.value)" ${item.checked ? 'disabled' : ''}>
+    <input class="item-qty" value="${escHtml(item.qty||'')}" placeholder="qty" onchange="updateItemQty(${ci},${ii},this.value)">
+    <button class="item-del" onclick="deleteItem(${ci},${ii})">×</button>
+  </div>`;
+}
+
+function escHtml(s) { return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+
+function updateStats() {
+  const trip = getTrip();
+  if (!trip) return;
+  const total = trip.categories.reduce((s,c) => s + c.items.length, 0);
+  const checked = trip.categories.reduce((s,c) => s + c.items.filter(i => i.checked).length, 0);
+  const pct = total ? (checked / total * 100) : 0;
+  document.getElementById('cl-progress-fill').style.width = pct + '%';
+  document.getElementById('cl-subtitle').textContent = `${checked} of ${total} items complete`;
+  document.getElementById('stat-checked').textContent = checked;
+  document.getElementById('stat-remaining').textContent = total - checked;
+  document.getElementById('stat-total').textContent = total;
+}
+
+// ══════════════════════════════════════════════════════════
+// ITEM ACTIONS
+// ══════════════════════════════════════════════════════════
+function toggleItem(ci, ii) {
+  const trip = getTrip();
+  trip.categories[ci].items[ii].checked = !trip.categories[ci].items[ii].checked;
+  trip.modified = Date.now();
+  saveTrips();
+  const itemEl = document.getElementById(`item-${ci}-${ii}`);
+  const item = trip.categories[ci].items[ii];
+  if (item.checked) {
+    itemEl.classList.add('checked');
+    itemEl.querySelector('.item-text').disabled = true;
+  } else {
+    itemEl.classList.remove('checked');
+    itemEl.querySelector('.item-text').disabled = false;
+  }
+  updateStats();
+  // update cat header count
+  const catEl = document.getElementById(`cat-${ci}`);
+  if (catEl) {
+    const hdr = catEl.querySelector('.cat-header span:nth-child(3)');
+    if (hdr) hdr.textContent = `(${trip.categories[ci].items.filter(i=>i.checked).length}/${trip.categories[ci].items.length})`;
+  }
+}
+
+function updateItemText(ci, ii, val) {
+  const trip = getTrip();
+  trip.categories[ci].items[ii].text = val;
+  trip.modified = Date.now();
+  saveTrips();
+}
+
+function updateItemQty(ci, ii, val) {
+  const trip = getTrip();
+  trip.categories[ci].items[ii].qty = val;
+  trip.modified = Date.now();
+  saveTrips();
+}
+
+function deleteItem(ci, ii) {
+  const trip = getTrip();
+  trip.categories[ci].items.splice(ii, 1);
+  trip.modified = Date.now();
+  saveTrips();
+  renderChecklist();
+}
+
+function addItem(ci, inputEl) {
+  const val = inputEl.value.trim();
+  if (!val) return;
+  const trip = getTrip();
+  trip.categories[ci].items.push({ id: uid(), text: val, qty: '', checked: false });
+  trip.modified = Date.now();
+  saveTrips();
+  inputEl.value = '';
+  renderChecklist();
+  // scroll to added item
+  const itemsEl = document.getElementById(`items-${ci}`);
+  if (itemsEl) itemsEl.scrollIntoView({ behavior: 'smooth', block: 'end' });
+}
+
+function toggleCat(ci) {
+  const trip = getTrip();
+  trip.categories[ci].collapsed = !trip.categories[ci].collapsed;
+  saveTrips();
+  renderChecklist();
+}
+
+function addCategory() {
+  const input = document.getElementById('new-cat-input');
+  const val = input.value.trim();
+  if (!val) return;
+  const trip = getTrip();
+  trip.categories.push({ cat: val, collapsed: false, items: [] });
+  trip.modified = Date.now();
+  saveTrips();
+  input.value = '';
+  renderChecklist();
+}
+
+function uncheckAll() {
+  if (!confirm('Uncheck all items?')) return;
+  const trip = getTrip();
+  trip.categories.forEach(c => c.items.forEach(i => i.checked = false));
+  trip.modified = Date.now();
+  saveTrips();
+  renderChecklist();
+}
+
+function saveCurrentTrip() {
+  const trip = getTrip();
+  if (!trip) return;
+  trip.name = document.getElementById('cl-title-input').value;
+  trip.modified = Date.now();
+  saveTrips();
+}
+
+// ══════════════════════════════════════════════════════════
+// LIBRARY PANEL
+// ══════════════════════════════════════════════════════════
+function openLibrary() {
+  const trip = getTrip();
+  const lib = LIBRARY[trip.activityId] || [];
+  const content = document.getElementById('library-content');
+  if (!lib.length) {
+    content.innerHTML = '<p style="color:var(--text-muted);font-size:13px;">No library items for this activity. Use the Add Item fields to add custom items.</p>';
+  } else {
+    content.innerHTML = lib.map(cat => `
+      <div class="lib-category">
+        <div class="lib-cat-name">${cat.cat}</div>
+        <div class="lib-items">${cat.items.map(item =>
+          `<div class="lib-item" onclick="addLibItem(this,'${escHtml(item)}')">${item}</div>`
+        ).join('')}</div>
+      </div>`).join('');
+  }
+  document.getElementById('library-panel').classList.add('open');
+  document.getElementById('overlay').classList.add('open');
+}
+
+function addLibItem(el, text) {
+  const trip = getTrip();
+  if (!trip.categories.length) trip.categories.push({ cat: 'Items', collapsed: false, items: [] });
+  const lastCat = trip.categories[trip.categories.length - 1];
+  if (lastCat.items.find(i => i.text === text)) { toast('Already in list'); return; }
+  lastCat.items.push({ id: uid(), text, qty: '', checked: false });
+  trip.modified = Date.now();
+  saveTrips();
+  el.style.background = 'var(--green)';
+  el.style.color = 'var(--navy)';
+  toast(`Added: ${text}`);
+  updateStats();
+}
+
+function closeLibrary() {
+  document.getElementById('library-panel').classList.remove('open');
+  document.getElementById('overlay').classList.remove('open');
+}
+
+// ══════════════════════════════════════════════════════════
+// DESTINATION PLANNER
+// ══════════════════════════════════════════════════════════
+function openDestModal() {
+  document.getElementById('dest-backdrop').style.display = 'block';
+  document.getElementById('dest-modal').classList.add('open');
+  document.getElementById('dest-results').innerHTML = '';
+  setTimeout(() => document.getElementById('dest-input').focus(), 100);
+}
+
+function closeDestModal() {
+  document.getElementById('dest-modal').classList.remove('open');
+  document.getElementById('dest-backdrop').style.display = 'none';
+}
+
+// ── Disambiguation: called when user picks from the location picker ──
+async function lookupDestinationWithResult(geoResult) {
+  const fromDate = document.getElementById('dest-from').value;
+  const toDate   = document.getElementById('dest-to').value;
+  await runDestinationLookup(geoResult, fromDate, toDate);
+}
+
+function parseStateHint(query) {
+  const m = query.trim().match(/[,\s]+([A-Za-z]{2})\s*$/);
+  if (!m) return null;
+  const abbr = m[1].toUpperCase();
+  const validAbbrs = ['AL','AK','AZ','AR','CA','CO','CT','DE','FL','GA','HI','ID','IL','IN','IA','KS','KY','LA','ME','MD','MA','MI','MN','MS','MO','MT','NE','NV','NH','NJ','NM','NY','NC','ND','OH','OK','OR','PA','RI','SC','SD','TN','TX','UT','VT','VA','WA','WV','WI','WY','DC'];
+  return validAbbrs.includes(abbr) ? abbr : null;
+}
+
+function stateAbbr(stateName) {
+  if (!stateName) return null;
+  const map = {'Alabama':'AL','Alaska':'AK','Arizona':'AZ','Arkansas':'AR','California':'CA','Colorado':'CO','Connecticut':'CT','Delaware':'DE','Florida':'FL','Georgia':'GA','Hawaii':'HI','Idaho':'ID','Illinois':'IL','Indiana':'IN','Iowa':'IA','Kansas':'KS','Kentucky':'KY','Louisiana':'LA','Maine':'ME','Maryland':'MD','Massachusetts':'MA','Michigan':'MI','Minnesota':'MN','Mississippi':'MS','Missouri':'MO','Montana':'MT','Nebraska':'NE','Nevada':'NV','New Hampshire':'NH','New Jersey':'NJ','New Mexico':'NM','New York':'NY','North Carolina':'NC','North Dakota':'ND','Ohio':'OH','Oklahoma':'OK','Oregon':'OR','Pennsylvania':'PA','Rhode Island':'RI','South Carolina':'SC','South Dakota':'SD','Tennessee':'TN','Texas':'TX','Utah':'UT','Vermont':'VT','Virginia':'VA','Washington':'WA','West Virginia':'WV','Wisconsin':'WI','Wyoming':'WY','District of Columbia':'DC'};
+  return map[stateName] || null;
+}
+
+function countryFlag(cca2) {
+  if (!cca2 || cca2.length !== 2) return '';
+  return cca2.toUpperCase().replace(/./g, c => String.fromCodePoint(127397 + c.charCodeAt(0)));
+}
+
+function buildLocationLabel(r) {
+  const flag = r.country_code ? countryFlag(r.country_code) : '';
+  const parts = [r.name];
+  if (r.admin2 && r.admin2 !== r.name) parts.push(r.admin2);
+  if (r.admin1) parts.push(r.country_code === 'US' ? (stateAbbr(r.admin1) || r.admin1) : r.admin1);
+  if (r.country) parts.push(r.country);
+  return `${flag} ${parts.join(', ')}`.trim();
+}
+
+async function lookupDestination() {
+  const query = document.getElementById('dest-input').value.trim();
+  if (!query) { toast('Enter a destination'); return; }
+  const fromDate = document.getElementById('dest-from').value;
+  const toDate   = document.getElementById('dest-to').value;
+  const results  = document.getElementById('dest-results');
+  results.innerHTML = `<div style="padding:20px;text-align:center;"><span class="spinner"></span> Looking up ${escHtml(query)}\u2026</div>`;
+
+  try {
+    // Step 1: Geocode — fetch up to 10 candidates
+    let geoResults = [];
+    try {
+      const gRes = await fetch(`https://geocoding-api.open-meteo.com/v1/search?name=${encodeURIComponent(query)}&count=10&language=en&format=json`);
+      if (gRes.ok) { const gJson = await gRes.json(); geoResults = gJson.results || []; }
+    } catch(e) {}
+
+    if (!geoResults.length) {
+      results.innerHTML = `<p style="color:var(--text-muted);margin-top:16px;">No location found for "<strong>${escHtml(query)}</strong>".<br><br><span style="font-size:12px;">Try adding a state (e.g. <em>Springfield, IL</em>) or country name.</span></p>`;
+      return;
+    }
+
+    // Step 2: If user typed a state hint (e.g. "Rockwood, PA"), filter to that state first
+    const stateHint = parseStateHint(query);
+    let candidates = geoResults;
+    if (stateHint) {
+      const hinted = geoResults.filter(r => r.country_code === 'US' && stateAbbr(r.admin1) === stateHint);
+      if (hinted.length) candidates = hinted;
+    }
+
+    // Step 3: Deduplicate by name + state/region + country
+    const seen = new Set();
+    const unique = candidates.filter(r => {
+      const key = `${r.name.toLowerCase()}|${(r.admin1||'').toLowerCase()}|${r.country_code||''}`;
+      if (seen.has(key)) return false;
+      seen.add(key); return true;
+    });
+
+    // Step 4: If multiple distinct places, show picker
+    if (unique.length > 1) {
+      results.innerHTML = `
+        <div style="margin-top:16px;">
+          <p style="font-size:13px;color:var(--text-dim);margin-bottom:12px;">
+            Multiple locations match <strong>${escHtml(query)}</strong>. Which one did you mean?
+          </p>
+          <div style="display:flex;flex-direction:column;gap:8px;">
+            ${unique.slice(0,8).map(r => {
+              const label = buildLocationLabel(r);
+              const safe = JSON.stringify(r).replace(/\\/g,'\\\\').replace(/`/g,'\\`').replace(/\$/g,'\\$');
+              return `<button class="tb-btn" style="text-align:left;padding:11px 14px;font-size:13px;line-height:1.4;"
+                onclick="lookupDestinationWithResult(JSON.parse(atob('${btoa(unescape(encodeURIComponent(JSON.stringify(r))))}')))">${label}</button>`;
+            }).join('')}
+          </div>
+        </div>`;
+      return;
+    }
+
+    // Single result — go straight to full lookup
+    await runDestinationLookup(unique[0], fromDate, toDate);
+
+  } catch(err) {
+    document.getElementById('dest-results').innerHTML = `<p style="color:var(--red);margin-top:12px;">Could not load destination info. Check your connection and try again.</p>`;
+    console.error(err);
+  }
+}
+
+async function runDestinationLookup(r, fromDate, toDate) {
+  const results = document.getElementById('dest-results');
+  results.innerHTML = `<div style="padding:20px;text-align:center;"><span class="spinner"></span> Loading ${escHtml(r.name)}&#x2026;</div>`;
+
+  try {
+    const lat = r.latitude, lon = r.longitude;
+    const geoCountryCode = r.country_code || null;
+    const geoAdmin1 = r.admin1 || '';
+    const geoCountryName = r.country || '';
+    const locationName = buildLocationLabel(r);
+    const wikiQuery = r.name;
+
+    const isDomesticUS = geoCountryCode === 'US';
+    const isCountryLevel = !geoAdmin1 && !isDomesticUS;
+
+    let countryData = null;
+    if (!isDomesticUS) {
+      try {
+        const searchTerm = isCountryLevel ? wikiQuery : geoCountryName || wikiQuery;
+        const cRes = await fetch(`https://restcountries.com/v3.1/name/${encodeURIComponent(searchTerm)}?fullText=false`);
+        if (cRes.ok) {
+          const cJson = await cRes.json();
+          countryData = cJson.find(c => c.cca2 === geoCountryCode) || cJson[0];
+        }
+      } catch(e) {}
+    }
+
+    let wikiSummary = null, wikiUrl = null;
+    try {
+      const wRes = await fetch(`https://en.wikivoyage.org/api/rest_v1/page/summary/${encodeURIComponent(wikiQuery)}`);
+      if (wRes.ok) {
+        const wJson = await wRes.json();
+        if (wJson.extract && wJson.extract.length > 30) {
+          wikiSummary = wJson.extract;
+          wikiUrl = wJson.content_urls?.desktop?.page || null;
+        }
+      }
+    } catch(e) {}
+
+    let wikiSections = [];
+    try {
+      const wsRes = await fetch(`https://en.wikivoyage.org/api/rest_v1/page/mobile-sections/${encodeURIComponent(wikiQuery)}`);
+      if (wsRes.ok) {
+        const wsJson = await wsRes.json();
+        const usefulSections = ['Understand','Climate','Get around','Stay safe','Respect','Buy','Drink','Eat','See','Do','Events','Festivals'];
+        (wsJson.remaining?.sections || []).forEach(sec => {
+          if (usefulSections.some(u => sec.line?.includes(u))) {
+            const text = (sec.text||'').replace(/<[^>]+>/g,'').replace(/\s+/g,' ').trim().slice(0,220);
+            if (text && text.length > 30) wikiSections.push({ title: sec.line, text });
+          }
+        });
+      }
+    } catch(e) {}
+
+    let tzInfo = null;
+    if (isDomesticUS) {
+      try {
+        const tzRes = await fetch(`https://timeapi.io/api/timezone/coordinate?latitude=${lat}&longitude=${lon}`);
+        if (tzRes.ok) { const tzJson = await tzRes.json(); tzInfo = tzJson.timeZone; }
+      } catch(e) {}
+      if (!tzInfo) tzInfo = guessTZFromState(geoAdmin1);
+    }
+
+    let weatherDays = [];
+    let weatherNote = ''; // extra context for narrative when travel dates are in future
+    if (lat && lon) {
+      // Always fetch the current 16-day forecast — Open-Meteo's forecast window
+      // If travel dates are provided and within the window, slice to those days
+      const weatherUrl = `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&daily=temperature_2m_max,temperature_2m_min,precipitation_sum,weather_code&temperature_unit=fahrenheit&timezone=auto&forecast_days=16`;
+      try {
+        const wRes = await fetch(weatherUrl);
+        if (wRes.ok) {
+          const wJson = await wRes.json();
+          const d = wJson.daily;
+          const allDays = (d.time||[]).map((t,i) => ({
+            date:t, hi:Math.round(d.temperature_2m_max[i]), lo:Math.round(d.temperature_2m_min[i]),
+            precip:d.precipitation_sum[i]||0, code:(d.weather_code||d.weathercode||[])[i]||0
+          }));
+          if (fromDate) {
+            // Filter to requested date range if those dates are in the forecast window
+            const filtered = allDays.filter(day => day.date >= fromDate && (!toDate || day.date <= toDate));
+            if (filtered.length > 0) {
+              weatherDays = filtered;
+              weatherNote = `Showing forecast for your travel dates (${fromDate}${toDate && toDate !== fromDate ? ' to ' + toDate : ''}).`;
+            } else {
+              // Travel dates are beyond the 16-day window — show current week with a note
+              weatherDays = allDays.slice(0, 7);
+              weatherNote = `⚠️ Your travel dates (${fromDate}) are beyond the 16-day forecast window. Showing current conditions — check back closer to your trip.`;
+            }
+          } else {
+            weatherDays = allDays.slice(0, 7);
+          }
+        }
+      } catch(e) { console.error('Weather fetch failed:', e); }
+    }
+
+    const suggestions = buildDestSuggestions(countryData, weatherDays, wikiQuery, isDomesticUS, geoAdmin1);
+
+    let html = `<div style="margin-top:16px;">`;
+    html += `<div class="dest-section"><h4>&#128205; ${locationName}</h4><div class="dest-facts">`;
+
+    if (isDomesticUS) {
+      html += `
+        <div class="dest-fact"><span class="label">Country</span><span class="value">&#127482;&#127480; United States</span></div>
+        <div class="dest-fact"><span class="label">State</span><span class="value">${geoAdmin1||'&mdash;'}</span></div>
+        ${tzInfo ? `<div class="dest-fact"><span class="label">Time Zone</span><span class="value">${tzInfo}</span></div>` : ''}
+        <div class="dest-fact"><span class="label">Currency</span><span class="value">USD ($)</span></div>
+        <div class="dest-fact"><span class="label">Power</span><span class="value">Type A/B &middot; 120V</span></div>
+        <div class="dest-fact"><span class="label">Emergency</span><span class="value">&#128222; 911</span></div>`;
+    } else if (countryData) {
+      const curr = Object.values(countryData.currencies||{})[0];
+      const plugs = getPlugTypes(countryData.cca2);
+      html += `
+        <div class="dest-fact"><span class="label">Capital</span><span class="value">${countryData.capital?.[0]||'&mdash;'}</span></div>
+        <div class="dest-fact"><span class="label">Currency</span><span class="value">${curr ? `${curr.name} (${curr.symbol||''})` : '&mdash;'}</span></div>
+        <div class="dest-fact"><span class="label">Language</span><span class="value">${Object.values(countryData.languages||{})[0]||'&mdash;'}</span></div>
+        <div class="dest-fact"><span class="label">Calling Code</span><span class="value">+${(countryData.idd?.root||'').replace('+','')}${countryData.idd?.suffixes?.[0]||''}</span></div>
+        <div class="dest-fact"><span class="label">Power Plugs</span><span class="value">${plugs}</span></div>
+        <div class="dest-fact"><span class="label">Voltage</span><span class="value">${getVoltage(countryData.cca2)}</span></div>
+        <div class="dest-fact"><span class="label">Driving Side</span><span class="value">${countryData.car?.side === 'left' ? '&#128663; Left' : '&#128663; Right'}</span></div>`;
+    }
+    html += `</div></div>`;
+
+    if (wikiSummary) {
+      html += `<div class="dest-section">
+        <h4>&#128214; About ${escHtml(wikiQuery)}</h4>
+        <p style="font-size:13px;color:var(--text-dim);line-height:1.6;">${wikiSummary}</p>
+        ${wikiUrl ? `<a href="${wikiUrl}" target="_blank" style="font-size:12px;color:var(--amber);text-decoration:none;margin-top:6px;display:inline-block;">More on Wikivoyage &#8599;</a>` : ''}
+      </div>`;
+    }
+
+    // ── Things to Do (from Wikivoyage sections) ──
+    const doSections = wikiSections.filter(s => ['See','Do','Eat','Drink','Buy','Events','Festivals'].some(k => s.title.includes(k)));
+    const noteSections = wikiSections.filter(s => ['Understand','Climate','Get around','Stay safe','Respect'].some(k => s.title.includes(k)));
+
+    if (doSections.length) {
+      html += `<div class="dest-section"><h4>&#127922; Things to Do</h4>`;
+      doSections.slice(0,3).forEach(s => {
+        html += `<div style="margin-bottom:10px;">
+          <div style="font-size:12px;font-weight:700;color:var(--amber);margin-bottom:3px;">${s.title}</div>
+          <div style="font-size:12px;color:var(--text-dim);line-height:1.5;">${s.text}&hellip;</div>
+        </div>`;
+      });
+      html += `</div>`;
+    }
+
+    if (noteSections.length) {
+      html += `<div class="dest-section"><h4>&#128506;&#65039; Travel Notes</h4>`;
+      noteSections.slice(0,3).forEach(s => {
+        html += `<div style="margin-bottom:10px;">
+          <div style="font-size:12px;font-weight:700;color:var(--amber);margin-bottom:3px;">${s.title}</div>
+          <div style="font-size:12px;color:var(--text-dim);line-height:1.5;">${s.text}&hellip;</div>
+        </div>`;
+      });
+      html += `</div>`;
+    }
+
+    // ── Weather with packing narrative ──
+    if (weatherDays.length) {
+      const avgHiW = weatherDays.reduce((s,d)=>s+d.hi,0)/weatherDays.length;
+      const avgLoW = weatherDays.reduce((s,d)=>s+d.lo,0)/weatherDays.length;
+      const rainyDays = weatherDays.filter(d=>d.precip>5).length;
+      const stormDays = weatherDays.filter(d=>d.code>=80).length;
+
+      let packNarrative = '';
+      const feels = avgHiW >= 90 ? 'very hot' : avgHiW >= 78 ? 'warm' : avgHiW >= 60 ? 'mild' : avgHiW >= 45 ? 'cool' : 'cold';
+      packNarrative += `Expect ${feels} days (${Math.round(avgLoW)}&ndash;${Math.round(avgHiW)}&deg;F).`;
+      if (rainyDays >= 4) packNarrative += ` Rain is likely most days &mdash; pack a rain jacket and waterproof bag.`;
+      else if (rainyDays >= 2) packNarrative += ` Some rain expected (${rainyDays} days) &mdash; bring a compact umbrella.`;
+      else packNarrative += ` Mostly dry conditions.`;
+      if (stormDays > 0) packNarrative += ` &#9928; Thunderstorms possible on ${stormDays} day${stormDays>1?'s':''}.`;
+      if (avgHiW - avgLoW > 25) packNarrative += ` Large day-to-night temperature swing &mdash; layers are essential.`;
+
+      html += `<div class="dest-section">
+        <h4>&#127780;&#65039; Weather Forecast</h4>
+        ${weatherNote ? `<div style="font-size:12px;color:var(--amber);margin-bottom:8px;padding:6px 10px;background:var(--navy-card);border-radius:var(--radius-sm);">${weatherNote}</div>` : ''}
+        <div style="font-size:12px;color:var(--text-dim);margin-bottom:10px;padding:8px 10px;background:var(--navy-card);border-radius:var(--radius-sm);border-left:3px solid var(--amber);">${packNarrative}</div>
+        <div class="weather-days">`;
+      weatherDays.forEach(d => {
+        html += `<div class="weather-day">
+          <div class="wd-date">${formatShortDate(d.date)}</div>
+          <div class="wd-icon">${weatherIcon(d.code)}</div>
+          <div class="wd-temp">${d.hi}&deg;/${d.lo}&deg;F</div>
+          ${d.precip > 0 ? `<div style="font-size:10px;color:#5BA4CF;">&#128167;${d.precip.toFixed(1)}mm</div>` : ''}
+        </div>`;
+      });
+      html += `</div></div>`;
+    }
+
+    if (suggestions.length) {
+      html += `<div class="dest-section">
+        <h4>&#129523; Suggested Items to Add</h4>
+        <div class="suggested-items" id="sug-items">
+          ${suggestions.map((s,i) => `<div class="sug-item" id="sug-${i}" onclick="addSuggestedItem(${i},'${escHtml(s)}')">${s}</div>`).join('')}
+        </div>
+        <button class="btn btn-primary" id="dest-add-all" style="margin-top:12px;" onclick="addAllSuggested(${JSON.stringify(suggestions).replace(/"/g,'&quot;')})">+ Add All to List</button>
+      </div>`;
+    }
+
+    if (!wikiSummary && !weatherDays.length && !suggestions.length) {
+      html += `<p style="color:var(--text-muted);font-size:13px;margin-top:12px;">No additional info found for "${escHtml(wikiQuery)}". Try including the state or country (e.g. "Rockwood, PA").</p>`;
+    }
+
+    html += `</div>`;
+    results.innerHTML = html;
+
+  } catch(err) {
+    results.innerHTML = `<p style="color:var(--red);margin-top:12px;">Could not load destination info. Check your connection and try again.</p>`;
+    console.error(err);
+  }
+}
+
+function guessTZFromState(state) {
+  if (!state) return null;
+  const eastern  = ['Maine','New Hampshire','Vermont','Massachusetts','Rhode Island','Connecticut','New York','New Jersey','Pennsylvania','Delaware','Maryland','Virginia','West Virginia','North Carolina','South Carolina','Georgia','Florida','Ohio','Michigan','Indiana','Kentucky','Tennessee'];
+  const central  = ['Wisconsin','Illinois','Minnesota','Iowa','Missouri','Arkansas','Louisiana','Mississippi','Alabama','Oklahoma','Kansas','Nebraska','South Dakota','North Dakota','Texas'];
+  const mountain = ['Montana','Wyoming','Colorado','New Mexico','Idaho','Utah','Arizona'];
+  const pacific  = ['Washington','Oregon','California','Nevada'];
+  if (eastern.includes(state))  return 'Eastern (ET)';
+  if (central.includes(state))  return 'Central (CT)';
+  if (mountain.includes(state)) return 'Mountain (MT)';
+  if (pacific.includes(state))  return 'Pacific (PT)';
+  if (state === 'Alaska')       return 'Alaska (AKT)';
+  if (state === 'Hawaii')       return 'Hawaii (HST)';
+  return null;
+}
+
+function buildDestSuggestions(countryData, weatherDays, query, isDomesticUS, state) {
+  const items = new Set();
+
+  if (isDomesticUS) {
+    // ── Domestic US suggestions ──
+    items.add('Valid driver\'s license or ID');
+    items.add('Health insurance card');
+    items.add('Credit/debit cards');
+    items.add('Phone charger');
+    items.add('Portable battery bank');
+
+    // State-specific tips
+    const q = query.toLowerCase();
+    const s = (state||'').toLowerCase();
+    // Beach/coastal
+    if (['florida','hawaii','california','south carolina','north carolina','georgia','texas','virginia beach'].some(k => q.includes(k)||s.includes(k))) {
+      items.add('Sunscreen SPF 50+'); items.add('Beach towel'); items.add('Reef-safe sunscreen');
+      items.add('Swimwear'); items.add('Sandals / flip-flops'); items.add('Rash guard');
+    }
+    // Mountain / ski states
+    if (['colorado','utah','vermont','wyoming','montana','idaho','new hampshire'].some(k => q.includes(k)||s.includes(k))) {
+      items.add('Layers for altitude temperature swings'); items.add('Lip balm with SPF');
+      items.add('Sunglasses (UV protection)'); items.add('Altitude sickness awareness');
+    }
+    // Desert Southwest
+    if (['arizona','nevada','new mexico','mojave','las vegas','phoenix','tucson'].some(k => q.includes(k)||s.includes(k))) {
+      items.add('Extra water (1+ gallon/day in heat)'); items.add('Wide-brim hat');
+      items.add('Electrolyte packets'); items.add('SPF 50+ sunscreen'); items.add('Light breathable clothing');
+    }
+    // Major cities — transit tips
+    if (['new york','chicago','boston','san francisco','washington dc','philadelphia','seattle'].some(k => q.includes(k))) {
+      items.add('Transit app (local subway/bus)'); items.add('Comfortable walking shoes');
+      items.add('Small daypack'); items.add('Cash for tips'); items.add('Umbrella');
+    }
+    // Hurricane / storm belt
+    if (['florida','louisiana','texas','alabama','mississippi','georgia'].some(k => q.includes(k)||s.includes(k))) {
+      items.add('Check hurricane/storm season before travel');
+    }
+    // Alaska
+    if (q.includes('alaska') || s.includes('alaska')) {
+      items.add('Bear spray'); items.add('Waterproof boots'); items.add('Insect repellent (extreme)');
+      items.add('Layers for rapid weather changes'); items.add('Emergency satellite communicator');
+    }
+    // Hawaii
+    if (q.includes('hawaii') || s.includes('hawaii')) {
+      items.add('Reef-safe sunscreen (required by law)'); items.add('Snorkel gear');
+      items.add('Waterproof phone case'); items.add('Water shoes'); items.add('Light rain jacket');
+    }
+  } else if (countryData) {
+    // ── International suggestions ──
+    const cca2 = countryData.cca2;
+    const plugs = getPlugTypes(cca2);
+    if (!plugs.includes('A/B')) items.add('Universal power adapter');
+    const curr = Object.values(countryData.currencies||{})[0];
+    if (curr) items.add(`Local currency (${curr.symbol||curr.name})`);
+    if (countryData.languages && !Object.values(countryData.languages).some(l => l.toLowerCase().includes('english'))) {
+      items.add('Translation app (offline)'); items.add('Phrasebook');
+    }
+    if (cca2 === 'JP') { items.add('Cash (Japan is cash-heavy)'); items.add('IC transit card (Suica/Pasmo)'); }
+    if (['TH','VN','IN','ID','PH','KH','MM','LA'].includes(cca2)) {
+      items.add('Stomach medication'); items.add('Reef-safe sunscreen');
+      items.add('Insect repellent (DEET)'); items.add('Water purification tablets');
+    }
+    if (['FR','IT','ES','PT','GR','CZ','PL','HR'].includes(cca2)) {
+      items.add('EU power adapter (Type C)'); items.add('Comfortable walking shoes for cobblestones');
+    }
+    if (['GB','IE','MT'].includes(cca2)) items.add('UK/Ireland power adapter (Type G)');
+    if (countryData.car?.side === 'left') items.add('Note: traffic drives on LEFT');
+    if (['KE','TZ','UG','ET','GH','NG','SN'].includes(cca2)) {
+      items.add('Yellow fever vaccination card'); items.add('Malaria prophylaxis (consult doctor)');
+    }
+    items.add('Travel insurance documents');
+    items.add('Photocopy of passport (stored separately)');
+    items.add('International SIM or eSIM plan');
+  }
+
+  // ── Weather-based (applies to all) ──
+  const avgHi = weatherDays.length ? weatherDays.reduce((s,d) => s + d.hi, 0) / weatherDays.length : null;
+  const avgLo = weatherDays.length ? weatherDays.reduce((s,d) => s + d.lo, 0) / weatherDays.length : null;
+  const hasRain = weatherDays.some(d => d.precip > 5);
+  const hasHeavyRain = weatherDays.some(d => d.precip > 20);
+  if (avgHi !== null) {
+    if (avgHi < 32) {
+      items.add('Heavy winter coat'); items.add('Thermal base layers');
+      items.add('Gloves & beanie'); items.add('Waterproof insulated boots'); items.add('Hand warmers');
+    } else if (avgHi < 50) {
+      items.add('Warm jacket or parka'); items.add('Thermal layers'); items.add('Gloves & hat');
+    } else if (avgHi < 65) {
+      items.add('Light jacket or fleece'); items.add('Layers for cool evenings');
+    } else if (avgHi > 90) {
+      items.add('Sunscreen SPF 50+'); items.add('Light breathable clothing');
+      items.add('Portable fan'); items.add('Electrolyte packets'); items.add('Extra water bottles');
+    } else if (avgHi > 78) {
+      items.add('Sunscreen SPF 30+'); items.add('Sunglasses'); items.add('Hat');
+    }
+    if (avgLo !== null && avgLo < 40 && avgHi > 65) {
+      items.add('Light layer for mornings / evenings');
+    }
+  }
+  if (hasHeavyRain) {
+    items.add('Waterproof rain jacket'); items.add('Waterproof bag / dry bag');
+    items.add('Quick-dry clothing'); items.add('Waterproof footwear');
+  } else if (hasRain) {
+    items.add('Compact travel umbrella'); items.add('Rain jacket');
+  }
+
+  return Array.from(items).slice(0, 24);
+}
+
+function addSuggestedItem(i, text) {
+  const trip = getTrip();
+  if (!trip) return;
+  if (!trip.categories.length) trip.categories.push({ cat: 'Destination Items', collapsed: false, items: [] });
+  let destCat = trip.categories.find(c => c.cat === 'Destination Items');
+  if (!destCat) {
+    destCat = { cat: 'Destination Items', collapsed: false, items: [] };
+    trip.categories.push(destCat);
+  }
+  if (destCat.items.find(it => it.text === text)) { toast('Already in list'); return; }
+  destCat.items.push({ id: uid(), text, qty: '', checked: false });
+  trip.modified = Date.now();
+  saveTrips();
+  const el = document.getElementById(`sug-${i}`);
+  if (el) { el.classList.add('added'); el.textContent = '✓ ' + text; }
+  toast(`Added: ${text}`);
+}
+
+function addAllSuggested(suggestionsJson) {
+  const suggestions = JSON.parse(suggestionsJson);
+  const trip = getTrip();
+  if (!trip) return;
+  let destCat = trip.categories.find(c => c.cat === 'Destination Items');
+  if (!destCat) {
+    destCat = { cat: 'Destination Items', collapsed: false, items: [] };
+    trip.categories.push(destCat);
+  }
+  let added = 0;
+  suggestions.forEach((text, i) => {
+    if (!destCat.items.find(it => it.text === text)) {
+      destCat.items.push({ id: uid(), text, qty: '', checked: false });
+      added++;
+      const el = document.getElementById(`sug-${i}`);
+      if (el) { el.classList.add('added'); el.textContent = '✓ ' + text; }
+    }
+  });
+  trip.modified = Date.now();
+  saveTrips();
+  toast(`Added ${added} items to list`);
+  document.getElementById('dest-add-all').textContent = '✓ All Added';
+  document.getElementById('dest-add-all').disabled = true;
+}
+
+function getPlugTypes(cca2) {
+  const plugMap = {
+    US:['A','B'], CA:['A','B'], MX:['A','B'], JP:['A','B'],
+    GB:['G'], IE:['G'], MT:['G'], SG:['G'], MY:['G'],
+    AU:['I'], NZ:['I'],
+    IN:['C','D','M'],
+    CN:['A','C','I'],
+    BR:['N'],
+  };
+  return plugMap[cca2] ? 'Type ' + plugMap[cca2].join('/') : 'Type C (European)';
+}
+
+function getVoltage(cca2) {
+  const v110 = ['US','CA','MX','JP','TW','CO','VE','CU','PR'];
+  return v110.includes(cca2) ? '110-120V / 60Hz' : '220-240V / 50Hz';
+}
+
+function weatherIcon(code) {
+  if (code === 0) return '☀️';
+  if (code <= 3) return '🌤️';
+  if (code <= 49) return '🌫️';
+  if (code <= 69) return '🌧️';
+  if (code <= 79) return '🌨️';
+  if (code <= 99) return '⛈️';
+  return '🌡️';
+}
+
+function formatShortDate(dateStr) {
+  const d = new Date(dateStr + 'T12:00:00');
+  return d.toLocaleDateString('en-US', { weekday:'short', month:'numeric', day:'numeric' });
+}
+
+// ══════════════════════════════════════════════════════════
+// RECIPE IMPORT
+// ══════════════════════════════════════════════════════════
+function openRecipeModal() {
+  document.getElementById('recipe-backdrop').style.display = 'block';
+  document.getElementById('recipe-modal').classList.add('open');
+  document.getElementById('recipe-results').innerHTML = '';
+  document.getElementById('recipe-modal-actions').style.display = 'none';
+  document.getElementById('recipe-close-actions').style.display = 'flex';
+  document.getElementById('recipe-url-input').value = '';
+  document.getElementById('paste-recipe-text').value = '';
+  document.getElementById('paste-recipe-name').value = '';
+  switchRecipeTab('url');
+  refreshExistingRecipes();
+  setTimeout(() => document.getElementById('recipe-url-input').focus(), 100);
+}
+
+function closeRecipeModal() {
+  document.getElementById('recipe-modal').classList.remove('open');
+  document.getElementById('recipe-backdrop').style.display = 'none';
+  renderChecklist();
+}
+
+function switchRecipeTab(tab) {
+  const isUrl = tab === 'url';
+  document.getElementById('tab-url').style.display   = isUrl ? '' : 'none';
+  document.getElementById('tab-paste').style.display = isUrl ? 'none' : '';
+  document.getElementById('tab-url-btn').style.cssText   = `flex:1;padding:9px;font-size:13px;border:none;cursor:pointer;background:${isUrl ? 'var(--amber);color:var(--navy);font-weight:700' : 'var(--navy-light);color:var(--text-dim)'};`;
+  document.getElementById('tab-paste-btn').style.cssText = `flex:1;padding:9px;font-size:13px;border:none;cursor:pointer;background:${!isUrl ? 'var(--amber);color:var(--navy);font-weight:700' : 'var(--navy-light);color:var(--text-dim)'};`;
+  // Reset results when switching tabs
+  document.getElementById('recipe-results').innerHTML = '';
+  document.getElementById('recipe-modal-actions').style.display = 'none';
+  document.getElementById('recipe-close-actions').style.display = 'flex';
+}
+
+function parseTextRecipe() {
+  const raw = document.getElementById('paste-recipe-text').value.trim();
+  if (!raw) { toast('Paste some ingredients first'); return; }
+  const name = document.getElementById('paste-recipe-name').value.trim() || 'Pasted Recipe';
+
+  // Split on newlines, filter blank lines and lines that look like section headers
+  const lines = raw.split('\n').map(l => l.trim()).filter(l => l.length > 1 && !/^(ingredients?|directions?|instructions?|method|notes?|for the|makes?|serves?|[*]+)[\s:]/i.test(l));
+
+  if (!lines.length) {
+    document.getElementById('recipe-results').innerHTML = '<p style="color:var(--red);margin-top:12px;">No ingredients found. Make sure each ingredient is on its own line.</p>';
+    return;
+  }
+
+  const resultsEl = document.getElementById('recipe-results');
+  resultsEl.dataset.recipeName = name;
+  resultsEl.dataset.recipeUrl  = ''; // no URL for pasted recipes
+
+  resultsEl.innerHTML = `
+    <div style="margin-top:16px;">
+      <div style="font-size:15px;font-weight:600;margin-bottom:10px;color:var(--amber);">📋 ${escHtml(name)}</div>
+      <p style="font-size:12px;color:var(--text-muted);margin-bottom:8px;">${lines.length} ingredient${lines.length!==1?'s':''} found — select what to add:</p>
+      <div style="margin-bottom:8px;display:flex;gap:8px;">
+        <button class="tb-btn" onclick="selectAllIngredients(true)">Select All</button>
+        <button class="tb-btn" onclick="selectAllIngredients(false)">Deselect All</button>
+      </div>
+      <div id="ingredient-list">
+        ${lines.map((line, i) => `
+          <div class="recipe-ingredient">
+            <input type="checkbox" id="ing-${i}" checked data-ingredient="${escHtml(line)}">
+            <label for="ing-${i}" style="cursor:pointer;font-size:14px;">${escHtml(line)}</label>
+          </div>`).join('')}
+      </div>
+    </div>`;
+
+  document.getElementById('recipe-modal-actions').style.display = 'flex';
+  document.getElementById('recipe-close-actions').style.display = 'none';
+}
+
+function refreshExistingRecipes() {
+  const trip = getTrip();
+  if (!trip) return;
+  const urls  = trip._recipeUrls  || [];
+  const names = trip._recipeNames || [];
+  const box  = document.getElementById('recipe-existing-box');
+  const list = document.getElementById('recipe-existing-list');
+  if (!urls.length) { box.style.display = 'none'; return; }
+  box.style.display = 'block';
+  list.innerHTML = urls.map((url, i) => {
+    const name = names[i] || `Recipe ${i+1}`;
+    const shortUrl = url.replace(/^https?:\/\/(www\.)?/,'').slice(0, 55) + (url.length > 60 ? '…' : '');
+    return `<div style="display:flex;align-items:center;gap:8px;padding:9px 10px;background:var(--navy-card);border-radius:var(--radius-sm);margin-bottom:6px;">
+      <div style="flex:1;min-width:0;">
+        <div style="font-size:13px;font-weight:600;margin-bottom:2px;">${escHtml(name)}</div>
+        <a href="${escHtml(url)}" target="_blank" rel="noopener"
+           style="font-size:11px;color:var(--amber);text-decoration:none;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;display:block;"
+           title="${escHtml(url)}">${escHtml(shortUrl)}</a>
+      </div>
+      <button class="item-del" title="Remove recipe" onclick="removeRecipe(${i})">🗑</button>
+    </div>`;
+  }).join('');
+}
+
+function removeRecipe(idx) {
+  const trip = getTrip();
+  if (!trip) return;
+  const name = (trip._recipeNames||[])[idx] || 'this recipe';
+  if (!confirm(`Remove "${name}" and rebuild the shopping list without it?`)) return;
+
+  // Remove from url/name arrays
+  const urls  = trip._recipeUrls  || [];
+  const names = trip._recipeNames || [];
+  const removedUrl = urls[idx];
+  urls.splice(idx, 1);
+  names.splice(idx, 1);
+  trip._recipeUrls  = urls;
+  trip._recipeNames = names;
+
+  // Remove all recipe-generated categories and rebuild from remaining recipes
+  // We stored _structured on each item — re-merge without removed recipe's items
+  const remainingStructured = [];
+  trip.categories.filter(c => c._recipeUrls !== undefined).forEach(cat => {
+    cat.items.forEach(item => {
+      // Exclude items originally from the removed URL
+      if (item._structured) remainingStructured.push(item._structured);
+    });
+  });
+
+  // Drop all recipe cats
+  trip.categories = trip.categories.filter(c => c._recipeUrls === undefined);
+
+  // If nothing left, done
+  if (!remainingStructured.length) {
+    trip.modified = Date.now(); saveTrips(); refreshExistingRecipes(); toast('Recipe removed'); return;
+  }
+
+  // Rebuild from scratch using remainingStructured
+  const mergedR = mergeIngredients(remainingStructured);
+  const catMapR = new Map();
+  for (const [ingKey, entry] of mergedR) {
+    const ingName = entry.displayName || ingKey;
+    const catName = categorizeIngredient(ingName);
+    if (!catMapR.has(catName)) catMapR.set(catName, []);
+    catMapR.get(catName).push({
+      id: uid(), text: structuredToDisplay(ingName, entry), qty: '', checked: false,
+      _structured: { qty: entry.qty, unit: entry.unit, family: entry.family, name: ingName, rawText: entry.rawText }
+    });
+  }
+  // Keep non-grocery categories
+  const nonGroceryR = trip.categories.filter(cat =>
+    !GROCERY_CATS.some(g => g.cat === cat.cat)
+  );
+  trip.categories = [];
+  for (const { cat: catName } of GROCERY_CATS) {
+    const items = catMapR.get(catName);
+    if (items?.length) trip.categories.push({ cat: catName, collapsed: false, items, _recipeUrls: urls });
+  }
+  trip.categories.push(...nonGroceryR);
+
+  trip.modified = Date.now();
+  saveTrips();
+  refreshExistingRecipes();
+  toast('Recipe removed and list rebuilt');
+  renderChecklist();
+}
+
+async function fetchRecipe() {
+  const rawUrl = document.getElementById('recipe-url-input').value.trim();
+  if (!rawUrl || !rawUrl.startsWith('http')) { toast('Enter a valid recipe URL'); return; }
+  // Strip fragment (#...) — proxies don't need it and it can break encoding
+  const url = rawUrl.split('#')[0];
+
+  const results = document.getElementById('recipe-results');
+  results.innerHTML = `<div style="padding:20px;text-align:center;"><span class="spinner"></span> Loading recipe&hellip;</div>`;
+  document.getElementById('recipe-modal-actions').style.display = 'none';
+  document.getElementById('recipe-close-actions').style.display = 'flex';
+
+  // Multi-proxy fallback chain — try each until one returns usable HTML
+  const proxies = [
+    u => `https://api.allorigins.win/get?url=${encodeURIComponent(u)}`,
+    u => `https://api.allorigins.win/raw?url=${encodeURIComponent(u)}`,
+    u => `https://corsproxy.io/?url=${encodeURIComponent(u)}`,
+    u => `https://api.codetabs.com/v1/proxy?quest=${encodeURIComponent(u)}`,
+  ];
+
+  let html = null;
+  let proxyUsed = '';
+
+  for (const proxyFn of proxies) {
+    try {
+      const proxyUrl = proxyFn(url);
+      const res = await fetch(proxyUrl, { signal: AbortSignal.timeout(12000) });
+      if (!res.ok) continue;
+      const ct = res.headers.get('content-type') || '';
+      if (ct.includes('json')) {
+        const j = await res.json();
+        // allorigins wraps in { contents, status }
+        html = j.contents || j;
+      } else {
+        html = await res.text();
+      }
+      if (html && html.length > 500 && html.includes('<')) {
+        proxyUsed = proxyUrl.split('?')[0];
+        break;
+      }
+      html = null;
+    } catch(e) { html = null; }
+  }
+
+  if (!html) {
+    results.innerHTML = `<div style="color:var(--red);margin-top:12px;">
+      &#9888;&#65039; Could not reach that page through any proxy.<br><br>
+      <div style="color:var(--text-muted);font-size:13px;margin-top:8px;">Some sites block external requests. Try:<br>
+      &bull; A different recipe site (AllRecipes, Food Network, BBC Good Food, Serious Eats)<br>
+      &bull; Copying ingredient names into the checklist manually</div>
+    </div>`;
+    return;
+  }
+
+  const ingredients = parseRecipeIngredients(html);
+  const recipeName  = parseRecipeTitle(html);
+
+  if (!ingredients.length) {
+    results.innerHTML = `<div style="color:var(--amber);margin-top:12px;">
+      &#128269; Page loaded but no structured ingredient list found.<br><br>
+      <div style="font-size:13px;color:var(--text-muted);margin-top:8px;">
+        This usually works on AllRecipes, Food Network, Serious Eats, Epicurious, BBC Good Food, NYT Cooking, and most WordPress recipe blogs.<br><br>
+        The page may embed ingredients in a format we can't parse. Try copying ingredients manually.
+      </div>
+    </div>`;
+    return;
+  }
+
+  results.dataset.recipeName = recipeName || 'Recipe';
+  results.dataset.recipeUrl  = url;
+  results.innerHTML = `
+    <div style="margin-top:16px;">
+      ${recipeName ? `<div style="font-size:15px;font-weight:600;margin-bottom:10px;color:var(--amber);">&#128214; ${escHtml(recipeName)}</div>` : ''}
+      <p style="font-size:12px;color:var(--text-muted);margin-bottom:8px;">${ingredients.length} ingredient${ingredients.length!==1?'s':''} found &mdash; select what to add:</p>
+      <div style="margin-bottom:8px;display:flex;gap:8px;">
+        <button class="tb-btn" onclick="selectAllIngredients(true)">Select All</button>
+        <button class="tb-btn" onclick="selectAllIngredients(false)">Deselect All</button>
+      </div>
+      <div id="ingredient-list">
+        ${ingredients.map((ing, i) => `
+          <div class="recipe-ingredient">
+            <input type="checkbox" id="ing-${i}" checked data-ingredient="${escHtml(ing)}">
+            <label for="ing-${i}" style="cursor:pointer;font-size:14px;">${escHtml(ing)}</label>
+          </div>`).join('')}
+      </div>
+    </div>`;
+
+  document.getElementById('recipe-modal-actions').style.display = 'flex';
+  document.getElementById('recipe-close-actions').style.display = 'none';
+}
+
+function parseRecipeIngredients(html) {
+  // ── Method 1: JSON-LD — deep search including @graph, nested arrays ──
+  const ldBlocks = [...html.matchAll(/<script[^>]*type=["']application\/ld\+json["'][^>]*>([\s\S]*?)<\/script>/gi)];
+  for (const m of ldBlocks) {
+    try {
+      const data = JSON.parse(m[1].trim());
+      const recipe = findRecipeInLD(data);
+      if (recipe?.recipeIngredient?.length) {
+        return recipe.recipeIngredient.map(cleanIngredient).filter(s => s.length > 1);
+      }
+    } catch(e) {}
+  }
+
+  // ── Method 2: WPRM (WP Recipe Maker) — most common WordPress plugin ──
+  // Assembles ingredient from separate amount / unit / name / notes spans
+  const wprmItems = [...html.matchAll(/<li[^>]*class="[^"]*wprm-recipe-ingredient[^"]*"[^>]*>([\s\S]*?)<\/li>/gi)];
+  if (wprmItems.length) {
+    return wprmItems.map(m => {
+      const inner = m[1];
+      const amount = (inner.match(/class="[^"]*wprm-recipe-ingredient-amount[^"]*"[^>]*>([\s\S]*?)<\/span>/i)||[])[1] || '';
+      const unit   = (inner.match(/class="[^"]*wprm-recipe-ingredient-unit[^"]*"[^>]*>([\s\S]*?)<\/span>/i)||[])[1]   || '';
+      const name   = (inner.match(/class="[^"]*wprm-recipe-ingredient-name[^"]*"[^>]*>([\s\S]*?)<\/span>/i)||[])[1]   || '';
+      const notes  = (inner.match(/class="[^"]*wprm-recipe-ingredient-notes[^"]*"[^>]*>([\s\S]*?)<\/span>/i)||[])[1]  || '';
+      const parts = [amount, unit, name, notes].map(cleanIngredient).filter(Boolean);
+      return parts.join(' ').trim();
+    }).filter(s => s.length > 1);
+  }
+
+  // ── Method 3: Tasty / Mediavine / other common plugin classes ──
+  const tastyItems = [...html.matchAll(/<li[^>]*class="[^"]*tasty-recipes-ingredient[^"]*"[^>]*>([\s\S]*?)<\/li>/gi)];
+  if (tastyItems.length) return tastyItems.map(m => cleanIngredient(m[1])).filter(s => s.length > 1);
+
+  const mediavine = [...html.matchAll(/<li[^>]*class="[^"]*mv-recipe-ingredient[^"]*"[^>]*>([\s\S]*?)<\/li>/gi)];
+  if (mediavine.length) return mediavine.map(m => cleanIngredient(m[1])).filter(s => s.length > 1);
+
+  const zlRecipe = [...html.matchAll(/<li[^>]*class="[^"]*ingredient[^"]*"[^>]*>([\s\S]*?)<\/li>/gi)];
+  if (zlRecipe.length) {
+    const results = zlRecipe.map(m => cleanIngredient(m[1])).filter(s => s.length > 2 && s.length < 200);
+    if (results.length >= 3) return [...new Set(results)];
+  }
+
+  // ── Method 4: itemprop microdata ──
+  const microdata = [...html.matchAll(/itemprop=["']recipeIngredient["'][^>]*>([\s\S]*?)(?=<\/(?:li|span|p|div)>)/gi)];
+  if (microdata.length) return microdata.map(m => cleanIngredient(m[1])).filter(s => s.length > 1);
+
+  // ── Method 5: Generic — look for an <ul> near the word "Ingredients" ──
+  const ingSection = html.match(/(?:Ingredients?|INGREDIENTS?)[^<]*<\/[^>]+>[\s\S]{0,200}?(<ul[\s\S]*?<\/ul>)/i);
+  if (ingSection) {
+    const items = [...ingSection[1].matchAll(/<li[^>]*>([\s\S]*?)<\/li>/gi)];
+    const cleaned = items.map(m => cleanIngredient(m[1])).filter(s => s.length > 2 && s.length < 200);
+    if (cleaned.length >= 2) return cleaned;
+  }
+
+  return [];
+}
+
+function findRecipeInLD(data) {
+  if (!data) return null;
+  if (Array.isArray(data)) {
+    for (const item of data) { const r = findRecipeInLD(item); if (r) return r; }
+  }
+  if (typeof data === 'object') {
+    const t = data['@type'];
+    if (t === 'Recipe' || (Array.isArray(t) && t.includes('Recipe'))) return data;
+    // Recurse into @graph and any array values
+    for (const val of Object.values(data)) {
+      if (val && typeof val === 'object') { const r = findRecipeInLD(val); if (r) return r; }
+    }
+  }
+  return null;
+}
+
+function cleanIngredient(s) {
+  if (!s) return '';
+  return s
+    .replace(/<[^>]+>/g, ' ')       // strip tags
+    .replace(/&amp;/g, '&')
+    .replace(/&nbsp;/g, ' ')
+    .replace(/&frac12;/g, '½').replace(/&frac14;/g, '¼').replace(/&frac34;/g, '¾')
+    .replace(/&#8531;/g, '⅓').replace(/&#8532;/g, '⅔')
+    .replace(/&[a-z]+;/g, '')       // strip remaining HTML entities
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
+function parseRecipeTitle(html) {
+  // og:title is most reliable
+  const og = html.match(/<meta[^>]*property=["']og:title["'][^>]*content=["']([^"']{3,120})["']/i)
+           || html.match(/<meta[^>]*content=["']([^"']{3,120})["'][^>]*property=["']og:title["']/i);
+  if (og) return cleanIngredient(og[1]);
+  // WPRM recipe name
+  const wprm = html.match(/class="[^"]*wprm-recipe-name[^"]*"[^>]*>([\s\S]*?)<\/[^>]+>/i);
+  if (wprm) return cleanIngredient(wprm[1]);
+  // H1
+  const h1 = html.match(/<h1[^>]*>([\s\S]{3,120}?)<\/h1>/i);
+  if (h1) return cleanIngredient(h1[1]);
+  return '';
+}
+
+function selectAllIngredients(state) {
+  document.querySelectorAll('#ingredient-list input[type=checkbox]').forEach(cb => cb.checked = state);
+}
+
+// ══════════════════════════════════════════════════════════
+// INGREDIENT PARSING & MERGING ENGINE
+// ══════════════════════════════════════════════════════════
+
+// Unit normalisation to teaspoons (base unit)
+const UNIT_TO_TSP = {
+  'tsp':1,'teaspoon':1,'teaspoons':1,
+  'tbsp':3,'tablespoon':3,'tablespoons':3,'tbs':3,'tb':3,
+  'fl oz':6,'fluid oz':6,'fluid ounce':6,'fluid ounces':6,
+  'cup':48,'cups':48,'c':48,
+  'pt':96,'pint':96,'pints':96,
+  'qt':192,'quart':192,'quarts':192,
+  'gal':768,'gallon':768,'gallons':768,
+  'ml':0.2029,'milliliter':0.2029,'milliliters':0.2029,'millilitre':0.2029,
+  'l':202.9,'liter':202.9,'liters':202.9,'litre':202.9,'litres':202.9,
+  'oz':1,'ounce':1,'ounces':1,  // dry oz kept as-is (not convertible to tsp)
+  'lb':16,'pound':16,'pounds':16,'lbs':16,
+  'g':1,'gram':1,'grams':1,'gr':1,
+  'kg':1000,'kilogram':1000,'kilograms':1000,
+  'pinch':0.25,'dash':0.5,'smidgen':0.125,
+  'pkg':1,'package':1,'packages':1,'packet':1,
+  'can':1,'cans':1,'jar':1,'jars':1,
+  'bunch':1,'bunches':1,'head':1,'heads':1,'stalk':1,'stalks':1,
+  'slice':1,'slices':1,'piece':1,'pieces':1,'sprig':1,'sprigs':1,
+  'clove':1,'cloves':1,'leaf':1,'leaves':1,'strip':1,'strips':1,
+};
+
+// Unit families for merging (only merge within same family)
+const VOLUME_UNITS  = new Set(['tsp','tbsp','cup','fl oz','pt','qt','gal','ml','l','pint','quart','gallon']);
+const WEIGHT_UNITS  = new Set(['oz','lb','g','kg','gram','pound','ounce']);
+const COUNT_UNITS   = new Set(['','piece','pieces','slice','slices','clove','cloves','head','heads','bunch','bunches','sprig','sprigs','leaf','leaves','stalk','stalks','strip','strips','pkg','package','can','cans','jar','jars']);
+
+function canonicalUnit(u) {
+  const m = {
+    'teaspoon':'tsp','teaspoons':'tsp','tbs':'tbsp','tb':'tbsp','tablespoon':'tbsp','tablespoons':'tbsp',
+    'fluid oz':'fl oz','fluid ounce':'fl oz','fluid ounces':'fl oz',
+    'cups':'cup','c':'cup',
+    'pint':'pt','pints':'pt',
+    'quart':'qt','quarts':'qt',
+    'gallon':'gal','gallons':'gal',
+    'milliliter':'ml','milliliters':'ml','millilitre':'ml','millilitres':'ml',
+    'liter':'l','liters':'l','litre':'l','litres':'l',
+    'ounce':'oz','ounces':'oz',
+    'pound':'lb','pounds':'lb','lbs':'lb',
+    'gram':'g','grams':'g','gr':'g',
+    'kilogram':'kg','kilograms':'kg',
+    'package':'pkg','packages':'pkg','packet':'pkg',
+    'cloves':'clove','heads':'head','bunches':'bunch','sprigs':'sprig','leaves':'leaf','stalks':'stalk',
+    'slices':'slice','pieces':'piece','strips':'strip','cans':'can','jars':'jar',
+  };
+  return m[u] || u;
+}
+
+// Parse "1 1/2 cups diced tomatoes, peeled" → {qty, unit, name, notes}
+function parseIngredientText(raw) {
+  const s = raw.trim();
+  // Fraction map
+  const fracs = {'½':0.5,'¼':0.25,'¾':0.75,'⅓':0.333,'⅔':0.667,'⅛':0.125,'⅜':0.375,'⅝':0.625,'⅞':0.875};
+  let work = s;
+  // Replace unicode fractions
+  for (const [sym, val] of Object.entries(fracs)) work = work.replace(sym, val);
+  // Replace slash fractions like 1/2
+  work = work.replace(/\b(\d+)\s*\/\s*(\d+)\b/g, (_, n, d) => String(Math.round((n/d)*1000)/1000));
+  // Mixed numbers like "1 0.5" → "1.5"
+  work = work.replace(/\b(\d+)\s+(0\.\d+)\b/g, (_, whole, frac) => String(parseFloat(whole) + parseFloat(frac)));
+
+  // Match optional quantity + optional unit + rest
+  const unitWords = Object.keys(UNIT_TO_TSP).join('|');
+  const re = new RegExp(
+    `^(\\d+(?:\\.\\d+)?)?\\s*` +
+    `(${unitWords})\\.?\\s+(.+)$`, 'i'
+  );
+  let m = work.match(re);
+  if (m) {
+    return {
+      qty:  parseFloat(m[1] || '1'),
+      unit: canonicalUnit(m[2].toLowerCase()),
+      name: normalizeName(m[3]),
+    };
+  }
+  // Quantity only (no unit) — e.g. "3 eggs"
+  const re2 = /^(\d+(?:\.\d+)?)\s+(.+)$/;
+  m = work.match(re2);
+  if (m) {
+    return { qty: parseFloat(m[1]), unit: '', name: normalizeName(m[2]) };
+  }
+  // No quantity
+  return { qty: null, unit: '', name: normalizeName(s) };
+}
+
+function normalizeName(n) {
+  // Strip trailing notes after comma or parenthesis
+  let s = n.replace(/\s*,.*$/, '').replace(/\s*\(.*?\)/g, '').trim();
+  // Strip common descriptors that don't affect identity for merging
+  s = s.replace(/\b(fresh|dried|frozen|organic|large|small|medium|extra-large|finely|roughly|thinly|coarsely|lightly)\b/gi, '').replace(/\s+/g,' ').trim();
+  return s.toLowerCase();
+}
+
+// Smart unit conversion for display — pick the most human-friendly unit
+function tspToDisplay(tsp, originalUnit) {
+  if (WEIGHT_UNITS.has(originalUnit) || COUNT_UNITS.has(originalUnit)) return null; // don't convert weights/counts
+  if (tsp >= 768)  return { qty: Math.round(tsp/768*4)/4,  unit: 'gal' };
+  if (tsp >= 192)  return { qty: Math.round(tsp/192*4)/4,  unit: 'qt' };
+  if (tsp >= 96)   return { qty: Math.round(tsp/96*4)/4,   unit: 'pt' };
+  if (tsp >= 48)   return { qty: Math.round(tsp/48*4)/4,   unit: 'cup' };
+  if (tsp >= 3)    return { qty: Math.round(tsp/3*4)/4,    unit: 'tbsp' };
+  return           { qty: Math.round(tsp*4)/4,              unit: 'tsp' };
+}
+
+function formatQty(qty) {
+  if (!qty && qty !== 0) return '';
+  const fracs = {0.125:'⅛',0.25:'¼',0.333:'⅓',0.5:'½',0.667:'⅔',0.75:'¾',0.875:'⅞'};
+  const whole = Math.floor(qty);
+  const frac  = Math.round((qty - whole) * 1000) / 1000;
+  const fracStr = fracs[frac] || (frac > 0 ? `${Math.round(frac*8)}/8` : '');
+  return (whole > 0 ? whole : '') + (fracStr ? ' ' + fracStr : '') || String(qty);
+}
+
+// Grocery category mapping
+const GROCERY_CATS = [
+  { cat: '🥦 Produce',        keywords: ['tomato','lettuce','spinach','kale','arugula','onion','garlic','shallot','leek','carrot','celery','potato','sweet potato','pepper','bell pepper','jalapeño','chile','chili','mushroom','zucchini','squash','eggplant','broccoli','cauliflower','cabbage','brussels','asparagus','artichoke','corn','cucumber','avocado','lemon','lime','orange','apple','banana','berry','strawberry','blueberry','raspberry','grape','mango','pineapple','peach','pear','plum','cherry','fig','date','watermelon','cantaloupe','melon','ginger','scallion','green onion','herb','basil','parsley','cilantro','thyme','rosemary','oregano','mint','sage','dill','chive','bay leaf','fennel','beet','turnip','radish','bok choy','endive','radicchio'] },
+  { cat: '🥩 Meat & Seafood',  keywords: ['chicken','beef','pork','lamb','turkey','duck','veal','sausage','bacon','ham','prosciutto','pancetta','ground','steak','chop','fillet','roast','brisket','ribs','loin','thigh','breast','wing','shrimp','prawn','salmon','tuna','cod','halibut','tilapia','trout','mahi','crab','lobster','scallop','clam','mussel','oyster','anchovy','sardine','fish','seafood'] },
+  { cat: '🧀 Dairy & Eggs',    keywords: ['milk','cream','half-and-half','buttermilk','butter','ghee','egg','cheese','parmesan','mozzarella','cheddar','feta','gouda','brie','ricotta','mascarpone','cream cheese','sour cream','yogurt','kefir','whipped cream','heavy cream','light cream','condensed milk','evaporated milk','ice cream'] },
+  { cat: '🍞 Bread & Bakery',  keywords: ['bread','baguette','roll','bun','tortilla','wrap','pita','naan','bagel','english muffin','croissant','crouton','breadcrumb','panko','flour tortilla'] },
+  { cat: '🥫 Canned & Jarred', keywords: ['canned','can of','tomato sauce','tomato paste','crushed tomato','diced tomato','whole tomato','coconut milk','coconut cream','broth','stock','bean','chickpea','lentil','kidney','black bean','pinto','cannellini','white bean','salsa','enchilada','pasta sauce','marinara','pesto','olive','pickle','caper','artichoke heart','roasted pepper','chipotle','adobo','anchovy paste','fish sauce','worcestershire','soy sauce'] },
+  { cat: '🌾 Dry Goods & Pasta',keywords: ['pasta','spaghetti','penne','rigatoni','fettuccine','linguine','rotini','farfalle','orzo','rice','arborio','basmati','jasmine','quinoa','couscous','lentil','split pea','barley','oat','oatmeal','cornmeal','polenta','panko','breadcrumb','cracker','cereal','granola'] },
+  { cat: '🧂 Pantry & Spices', keywords: ['salt','pepper','sugar','brown sugar','powdered sugar','honey','maple syrup','molasses','vanilla','baking powder','baking soda','yeast','cornstarch','arrowroot','gelatin','cocoa','chocolate','flour','oil','olive oil','vegetable oil','canola','coconut oil','sesame oil','vinegar','balsamic','apple cider vinegar','red wine vinegar','white wine vinegar','mustard','ketchup','mayo','mayonnaise','hot sauce','tabasco','sriracha','soy sauce','tamari','fish sauce','oyster sauce','hoisin','teriyaki','cumin','coriander','paprika','turmeric','cayenne','chili powder','garlic powder','onion powder','cinnamon','nutmeg','clove','allspice','cardamom','bay','curry','garam masala','italian seasoning','herbes','seasoning','extract','food coloring','dried fruit','raisin','cranberry','apricot','nut','almond','walnut','pecan','cashew','peanut','pine nut','seed','sesame','sunflower','pumpkin seed','broth','stock','bouillon','wine','beer','spirits','rum','vanilla extract'] },
+  { cat: '🧊 Frozen',          keywords: ['frozen','ice cream','sorbet','edamame'] },
+  { cat: '🥤 Beverages',       keywords: ['juice','water','sparkling','soda','coffee','tea','wine','beer','broth'] },
+  { cat: '🛒 Other',           keywords: [] },
+];
+
+function categorizeIngredient(name) {
+  const n = name.toLowerCase();
+  for (const { cat, keywords } of GROCERY_CATS) {
+    if (keywords.some(k => n.includes(k))) return cat;
+  }
+  return '🛒 Other';
+}
+
+function unitFamily(u) {
+  if (VOLUME_UNITS.has(u))  return 'volume';
+  if (WEIGHT_UNITS.has(u))  return 'weight';
+  return 'count';
+}
+
+// Normalise ingredient name for merging: lowercase + basic singularize
+function mergeKey(name) {
+  let s = (name || '').toLowerCase().trim();
+  // Basic singularization: remove trailing 's' for common patterns
+  // "tomatoes"→"tomato", "carrots"→"carrot", but not "peas"→"pea" or "asparagus"
+  s = s
+    .replace(/atoes$/,  'ato')   // tomatoes→tomato
+    .replace(/ches$/,   'ch')    // peaches→peach
+    .replace(/xes$/,    'x')     // boxes→box
+    .replace(/ies$/,    'y')     // berries→berry, cherries→cherry
+    .replace(/ves$/,    'f')     // loaves→loaf, halves→half
+    .replace(/([^s])s$/, '$1');  // carrots→carrot, eggs→egg (but not "asparagus","peas")
+  // Don't singularize words that end in 's' naturally
+  const keepPlural = ['asparagus','peas','oats','lentils','greens','oats','beets','sprouts','grits'];
+  if (keepPlural.some(k => s.includes(k.replace(/s$/,'')))) return s;
+  return s;
+}
+
+// Merge all structured ingredients across recipes into categorised grocery map
+function mergeIngredients(structuredList) {
+  // structuredList: [{qty, unit, name, rawText}]
+  const merged = new Map(); // key: normalised name → entry
+
+  for (const item of structuredList) {
+    const key = mergeKey(item.name);
+    const fam = unitFamily(item.unit);
+    if (!merged.has(key)) {
+      merged.set(key, { qty: item.qty, unit: item.unit, family: fam, rawText: item.rawText, displayName: item.name, count: 1 });
+    } else {
+      const existing = merged.get(key);
+      // Only merge if same unit family
+      if (existing.family === fam && item.qty !== null && existing.qty !== null) {
+        // Convert both to tsp base if volume
+        if (fam === 'volume') {
+          const basePer = UNIT_TO_TSP[existing.unit] || 1;
+          const baseNew = UNIT_TO_TSP[item.unit]     || 1;
+          const totalTsp = (existing.qty * basePer) + (item.qty * baseNew);
+          const display = tspToDisplay(totalTsp, existing.unit);
+          existing.qty  = display ? display.qty : Math.round(totalTsp * 100) / 100;
+          existing.unit = display ? display.unit : existing.unit;
+        } else if (fam === 'weight') {
+          // Convert to same unit if different weights
+          const baseExisting = UNIT_TO_TSP[existing.unit] || 1;
+          const baseNew      = UNIT_TO_TSP[item.unit]     || 1;
+          existing.qty = (existing.qty * baseExisting + item.qty * baseNew) / baseExisting;
+        } else {
+          existing.qty += item.qty;
+        }
+        existing.count++;
+      }
+      // Keep the rawText of the first occurrence if not merged
+    }
+  }
+  return merged;
+}
+
+function toTitleCase(s) {
+  if (!s) return s;
+  return s.charAt(0).toUpperCase() + s.slice(1);
+}
+
+function structuredToDisplay(name, entry) {
+  let qtyStr = entry.qty !== null ? formatQty(entry.qty) : '';
+  let unitStr = entry.unit || '';
+  if (COUNT_UNITS.has(unitStr) && unitStr !== '') unitStr = '';
+  const displayName = toTitleCase(name);
+  const parts = [qtyStr, unitStr, displayName].filter(Boolean);
+  return parts.join(' ');
+}
+
+function addSelectedIngredients() {
+  const trip = getTrip();
+  if (!trip) return;
+  const checkboxes = document.querySelectorAll('#ingredient-list input[type=checkbox]:checked');
+  if (!checkboxes.length) { toast('No ingredients selected'); return; }
+
+  const resultsEl  = document.getElementById('recipe-results');
+  const recipeName = resultsEl.dataset.recipeName || 'Recipe';
+  const recipeUrl  = resultsEl.dataset.recipeUrl  || '';
+
+  // Parse newly selected ingredients into structured form
+  const newStructured = [];
+  checkboxes.forEach(cb => {
+    const raw = cb.dataset.ingredient;
+    const parsed = parseIngredientText(raw);
+    newStructured.push({ ...parsed, rawText: raw });
+  });
+
+  // Track recipe URLs/names
+  const allRecipeUrls = [...(trip._recipeUrls||[]), recipeUrl].filter((v,i,a) => v && a.indexOf(v)===i);
+  trip._recipeUrls  = allRecipeUrls;
+  trip._recipeNames = [...(trip._recipeNames||[])];
+  if (!trip._recipeNames.includes(recipeName)) trip._recipeNames.push(recipeName);
+
+  // Gather ALL existing items from ALL grocery categories (default + previously added recipe items)
+  // This is the key fix: we merge everything together, not just recipe-sourced items
+  const existingStructured = [];
+  const nonGroceryCats = []; // preserve non-grocery categories (Household, etc.)
+  trip.categories.forEach(cat => {
+    const isKnownGroceryCat = GROCERY_CATS.some(g => {
+      const strip = s => s.replace(/^[^\w]+/, '').trim().toLowerCase();
+      return strip(g.cat) === strip(cat.cat);
+    });
+    if (isKnownGroceryCat) {
+      // Pull all items into the merge pool
+      cat.items.forEach(item => {
+        const structured = item._structured || parseIngredientText(item.text);
+        existingStructured.push({ ...structured, rawText: item.text });
+      });
+    } else {
+      // Keep non-grocery categories (Household, custom) as-is
+      nonGroceryCats.push(cat);
+    }
+  });
+
+  // Merge all existing + new recipe ingredients
+  const allStructured = [...existingStructured, ...newStructured];
+  const merged = mergeIngredients(allStructured);
+
+  // Rebuild grocery categories entirely from merged data
+  const catMap = new Map();
+  for (const [ingKey, entry] of merged) {
+    const ingName = entry.displayName || ingKey;
+    const catName = categorizeIngredient(ingName);
+    if (!catMap.has(catName)) catMap.set(catName, []);
+    catMap.get(catName).push({
+      id: uid(), text: structuredToDisplay(ingName, entry), qty: '', checked: false,
+      _structured: { qty: entry.qty, unit: entry.unit, family: entry.family, name: ingName, rawText: entry.rawText }
+    });
+  }
+
+  // Replace trip categories: rebuild grocery cats in order, then append non-grocery cats
+  trip.categories = [];
+  for (const { cat: catName } of GROCERY_CATS) {
+    const items = catMap.get(catName);
+    if (items?.length) {
+      trip.categories.push({ cat: catName, collapsed: false, items, _recipeUrls: allRecipeUrls });
+    }
+  }
+  // Re-append any non-grocery categories (Household, custom items, etc.)
+  trip.categories.push(...nonGroceryCats);
+
+  trip.modified = Date.now();
+  saveTrips();
+  toast(`Added ${newStructured.length} ingredients from "${recipeName}" — merged & categorised`);
+
+  // Reset for next recipe
+  document.getElementById('recipe-url-input').value = '';
+  document.getElementById('recipe-results').innerHTML = '';
+  document.getElementById('recipe-modal-actions').style.display = 'none';
+  document.getElementById('recipe-close-actions').style.display = 'flex';
+  refreshExistingRecipes();
+}
+
+// ══════════════════════════════════════════════════════════
+// TEMPLATES
+// ══════════════════════════════════════════════════════════
+function saveAsTemplate() {
+  const trip = getTrip();
+  if (!trip) return;
+  const name = prompt('Template name:', trip.name + ' Template');
+  if (!name) return;
+  const tmpl = {
+    id: uid(), name, activityId: trip.activityId,
+    categories: JSON.parse(JSON.stringify(trip.categories)),
+    created: Date.now()
+  };
+  templates.unshift(tmpl);
+  saveTemplates();
+  toast('Template saved!');
+}
+
+function renderTemplates() {
+  const list = document.getElementById('templates-list');
+  if (!templates.length) {
+    list.innerHTML = `<div style="padding:20px;"><div class="empty-state">No templates saved yet.<br>Open a checklist and tap "Save Template".</div></div>`;
+    return;
+  }
+  list.innerHTML = `<div style="padding:20px;">
+    <p class="section-label">Saved Templates</p>
+    ${templates.map(t => {
+      const act = ACTIVITIES.find(a => a.id === t.activityId) || { icon:'📋' };
+      const count = t.categories.reduce((s,c) => s + c.items.length, 0);
+      return `<div class="template-card">
+        <div class="t-icon">${act.icon}</div>
+        <div class="t-info">
+          <div class="t-name">${t.name}</div>
+          <div class="t-meta">${t.activityId} · ${count} items · ${formatDate(t.created)}</div>
+        </div>
+        <div class="t-actions">
+          <button class="t-action-btn" onclick="useTemplate('${t.id}')">Use</button>
+          <button class="t-action-btn danger" onclick="deleteTemplate('${t.id}')">🗑</button>
+        </div>
+      </div>`;
+    }).join('')}
+  </div>`;
+}
+
+function useTemplate(id) {
+  const tmpl = templates.find(t => t.id === id);
+  if (!tmpl) return;
+  pendingActivity = tmpl.activityId;
+  const act = ACTIVITIES.find(a => a.id === tmpl.activityId) || { icon:'📋', name:'Custom' };
+  const modal = document.getElementById('newtrip-modal');
+  document.getElementById('newtrip-title').textContent = `${act.icon} New ${act.name} List`;
+  const sel = document.getElementById('newtrip-template');
+  sel.innerHTML = templates.filter(t => t.activityId === tmpl.activityId)
+    .map(t => `<option value="${t.id}" ${t.id===id?'selected':''}>${t.name}</option>`).join('');
+  document.getElementById('newtrip-name').value = '';
+  document.getElementById('newtrip-backdrop').style.display = 'block';
+  modal.classList.add('open');
+  goHome();
+  setTimeout(() => document.getElementById('newtrip-name').focus(), 100);
+}
+
+function deleteTemplate(id) {
+  if (!confirm('Delete this template?')) return;
+  templates = templates.filter(t => t.id !== id);
+  saveTemplates();
+  renderTemplates();
+}
+
+// ══════════════════════════════════════════════════════════
+// EXPORT / IMPORT
+// ══════════════════════════════════════════════════════════
+function exportTrip() {
+  const trip = getTrip();
+  if (!trip) return;
+  const lines = [`# ${trip.name}\n`];
+  trip.categories.forEach(cat => {
+    lines.push(`\n## ${cat.cat}`);
+    cat.items.forEach(item => {
+      const check = item.checked ? '[x]' : '[ ]';
+      const qty = item.qty ? ` (${item.qty})` : '';
+      lines.push(`${check} ${item.text}${qty}`);
+    });
+  });
+  const blob = new Blob([lines.join('\n')], { type: 'text/plain' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = trip.name.replace(/\s+/g, '_') + '.md';
+  a.click();
+  toast('Exported as Markdown!');
+}
+
+// ══════════════════════════════════════════════════════════
+// UNIT CONVERTER
+// ══════════════════════════════════════════════════════════
+const CONV_GROUPS = [
+  { label: 'Volume (Cooking)', units: [
+    { name:'teaspoon (tsp)',    tsp:1         },
+    { name:'tablespoon (tbsp)',tsp:3          },
+    { name:'fluid ounce (fl oz)',tsp:6        },
+    { name:'cup',              tsp:48         },
+    { name:'pint',             tsp:96         },
+    { name:'quart',            tsp:192        },
+    { name:'gallon',           tsp:768        },
+    { name:'milliliter (ml)',  tsp:0.2029     },
+    { name:'liter (l)',        tsp:202.884    },
+  ]},
+  { label: 'Weight', units: [
+    { name:'gram (g)',         g:1            },
+    { name:'kilogram (kg)',    g:1000         },
+    { name:'ounce (oz)',       g:28.3495      },
+    { name:'pound (lb)',       g:453.592      },
+  ]},
+  { label: 'Temperature', units: [
+    { name:'Fahrenheit (°F)',  temp:'F'       },
+    { name:'Celsius (°C)',     temp:'C'       },
+  ]},
+];
+
+const CONV_CHART = {
+  'Volume (Cooking)': [
+    ['1 tsp','⅓ tbsp','⅙ fl oz','1/48 cup'],
+    ['3 tsp','1 tbsp','½ fl oz','1/16 cup'],
+    ['6 tsp','2 tbsp','1 fl oz','⅛ cup'],
+    ['12 tsp','4 tbsp','2 fl oz','¼ cup'],
+    ['24 tsp','8 tbsp','4 fl oz','½ cup'],
+    ['48 tsp','16 tbsp','8 fl oz','1 cup'],
+    ['2 cups','1 pint','16 fl oz','½ quart'],
+    ['4 cups','2 pints','32 fl oz','1 quart'],
+    ['16 cups','8 pints','128 fl oz','1 gallon'],
+  ],
+  'Weight': [
+    ['1 g','0.001 kg','0.035 oz','0.0022 lb'],
+    ['28.35 g','0.028 kg','1 oz','0.0625 lb'],
+    ['100 g','0.1 kg','3.53 oz','0.22 lb'],
+    ['227 g','0.227 kg','8 oz','½ lb'],
+    ['454 g','0.454 kg','16 oz','1 lb'],
+    ['1000 g','1 kg','35.27 oz','2.205 lb'],
+  ],
+  'Temperature': [
+    ['32°F','0°C (freezing)'],
+    ['250°F','121°C (low oven)'],
+    ['325°F','163°C (slow oven)'],
+    ['350°F','177°C (moderate)'],
+    ['375°F','191°C (mod-hot)'],
+    ['400°F','204°C (hot oven)'],
+    ['425°F','218°C (very hot)'],
+    ['450°F','232°C (broil)'],
+  ],
+};
+
+let convGroup = 'Volume (Cooking)';
+
+function openConverter() {
+  document.getElementById('conv-backdrop').style.display = 'block';
+  document.getElementById('conv-modal').classList.add('open');
+  buildConverterSelects();
+  runConverter();
+}
+
+function closeConverter() {
+  document.getElementById('conv-modal').classList.remove('open');
+  document.getElementById('conv-backdrop').style.display = 'none';
+}
+
+function buildConverterSelects() {
+  const fromSel = document.getElementById('conv-from');
+  const toSel   = document.getElementById('conv-to');
+  fromSel.innerHTML = '';
+  toSel.innerHTML   = '';
+  CONV_GROUPS.forEach(g => {
+    const og1 = document.createElement('optgroup'); og1.label = g.label;
+    const og2 = document.createElement('optgroup'); og2.label = g.label;
+    g.units.forEach(u => {
+      const o1 = document.createElement('option'); o1.value = `${g.label}|${u.name}`; o1.textContent = u.name; og1.appendChild(o1);
+      const o2 = document.createElement('option'); o2.value = `${g.label}|${u.name}`; o2.textContent = u.name; og2.appendChild(o2);
+    });
+    fromSel.appendChild(og1); toSel.appendChild(og2);
+  });
+  // Default: cup → tbsp
+  setSelectValue(fromSel, 'Volume (Cooking)|cup');
+  setSelectValue(toSel,   'Volume (Cooking)|tablespoon (tbsp)');
+}
+
+function setSelectValue(sel, val) {
+  for (const opt of sel.options) { if (opt.value === val) { opt.selected = true; return; } }
+}
+
+function getUnitDef(key) {
+  const [grp, name] = key.split('|');
+  const group = CONV_GROUPS.find(g => g.label === grp);
+  return group?.units.find(u => u.name === name);
+}
+
+function runConverter() {
+  const amt  = parseFloat(document.getElementById('conv-amount').value);
+  const fromKey = document.getElementById('conv-from').value;
+  const toKey   = document.getElementById('conv-to').value;
+  const [fromGrp] = fromKey.split('|');
+  const [toGrp]   = toKey.split('|');
+  const resEl   = document.getElementById('conv-result');
+  const chartEl = document.getElementById('conv-chart');
+
+  if (isNaN(amt)) { resEl.textContent = '—'; return; }
+
+  if (fromGrp !== toGrp) {
+    resEl.innerHTML = '<span style="color:var(--red);font-size:14px;">Cannot convert between different measurement types</span>';
+    chartEl.innerHTML = '';
+    return;
+  }
+
+  const fromDef = getUnitDef(fromKey);
+  const toDef   = getUnitDef(toKey);
+  if (!fromDef || !toDef) { resEl.textContent = '—'; return; }
+
+  let result, resultStr;
+
+  if (fromDef.temp && toDef.temp) {
+    // Temperature
+    if (fromDef.temp === 'F' && toDef.temp === 'C') result = (amt - 32) * 5/9;
+    else result = amt * 9/5 + 32;
+    resultStr = `${Math.round(result * 10)/10} ${toDef.name}`;
+  } else if (fromDef.tsp !== undefined) {
+    // Volume — convert via tsp
+    result = (amt * fromDef.tsp) / toDef.tsp;
+    resultStr = `${Math.round(result * 1000)/1000} ${toDef.name}`;
+  } else {
+    // Weight — convert via grams
+    result = (amt * fromDef.g) / toDef.g;
+    resultStr = `${Math.round(result * 1000)/1000} ${toDef.name}`;
+  }
+
+  resEl.textContent = `${amt} ${fromDef.name.split(' ')[0]} = ${resultStr}`;
+
+  // Show reference chart for the group
+  const chart = CONV_CHART[fromGrp];
+  if (chart) {
+    const headers = fromGrp === 'Temperature' ? ['°F','°C'] : fromGrp === 'Weight' ? ['g','kg','oz','lb'] : ['tsp','tbsp','fl oz','cup'];
+    chartEl.innerHTML = `<div style="font-size:11px;font-weight:700;color:var(--amber);margin-bottom:6px;text-transform:uppercase;letter-spacing:1px;">${fromGrp} Reference</div>
+      <table style="width:100%;border-collapse:collapse;font-size:11px;">
+        <thead><tr>${headers.map(h=>`<th style="text-align:left;padding:3px 4px;color:var(--text-muted);">${h}</th>`).join('')}</tr></thead>
+        <tbody>${chart.map(row=>`<tr>${row.map(c=>`<td style="padding:3px 4px;border-top:1px solid var(--border);">${c}</td>`).join('')}</tr>`).join('')}</tbody>
+      </table>`;
+  } else {
+    chartEl.innerHTML = '';
+  }
+}
+
+// ══════════════════════════════════════════════════════════
+// UTILS
+// ══════════════════════════════════════════════════════════
+function uid() { return Date.now().toString(36) + Math.random().toString(36).slice(2, 6); }
+
+let toastTimer;
+function toast(msg) {
+  const el = document.getElementById('toast');
+  el.textContent = msg;
+  el.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => el.classList.remove('show'), 2500);
+}
+
+// ══════════════════════════════════════════════════════════
+// INIT
+// ══════════════════════════════════════════════════════════
+renderHome();
+</script>
+</body>
+</html>

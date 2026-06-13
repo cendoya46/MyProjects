@@ -1,0 +1,418 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Carlos's Project Workshop</title>
+<style>
+  :root {
+    --canvas:   #F2EDE6;
+    --canvas2:  #E8E1D8;
+    --ink:      #1C1C1C;
+    --ink2:     #4A4A4A;
+    --ink3:     #888880;
+    --steel:    #2D5F8A;
+    --steel2:   #3A7AB0;
+    --amber:    #D4820A;
+    --amber2:   #F0A030;
+    --rule:     #C8C0B4;
+    --white:    #FFFFFF;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--canvas);
+    color: var(--ink);
+    font-family: system-ui, -apple-system, sans-serif;
+    min-height: 100vh;
+  }
+
+  /* ── Hero ── */
+  .hero {
+    background: var(--ink);
+    color: var(--white);
+    padding: 56px 32px 48px;
+    position: relative;
+    overflow: hidden;
+  }
+  .hero::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: repeating-linear-gradient(
+      90deg,
+      transparent,
+      transparent 60px,
+      rgba(255,255,255,0.018) 60px,
+      rgba(255,255,255,0.018) 61px
+    );
+    pointer-events: none;
+  }
+  .hero-inner { max-width: 860px; margin: 0 auto; position: relative; }
+  .hero-eyebrow {
+    font-size: 11px; letter-spacing: 2.5px; text-transform: uppercase;
+    color: var(--amber2); margin-bottom: 14px; font-weight: 500;
+  }
+  .hero-name {
+    font-family: Georgia, 'Times New Roman', serif;
+    font-size: clamp(36px, 6vw, 58px);
+    font-weight: normal;
+    line-height: 1.1;
+    letter-spacing: -1px;
+    margin-bottom: 16px;
+  }
+  .hero-name em {
+    font-style: normal;
+    color: var(--amber2);
+  }
+  .hero-desc {
+    font-size: 16px; color: rgba(255,255,255,0.65);
+    max-width: 520px; line-height: 1.65;
+    margin-bottom: 28px;
+  }
+  .hero-stats {
+    display: flex; gap: 32px; flex-wrap: wrap;
+    border-top: 1px solid rgba(255,255,255,0.12);
+    padding-top: 20px;
+  }
+  .stat-item { }
+  .stat-num {
+    font-family: Georgia, serif;
+    font-size: 26px; font-weight: normal; color: var(--white);
+  }
+  .stat-label { font-size: 11px; color: rgba(255,255,255,0.4); letter-spacing: 1px; text-transform: uppercase; margin-top: 2px; }
+
+  /* ── Nav strip ── */
+  .nav-strip {
+    background: var(--steel);
+    padding: 0 32px;
+    display: flex; gap: 0; overflow-x: auto;
+    scrollbar-width: none;
+  }
+  .nav-strip::-webkit-scrollbar { display: none; }
+  .nav-cat {
+    padding: 11px 18px;
+    font-size: 12px; font-weight: 600;
+    letter-spacing: 0.8px; text-transform: uppercase;
+    color: rgba(255,255,255,0.6);
+    cursor: pointer; border: none; background: none;
+    border-bottom: 3px solid transparent;
+    white-space: nowrap; transition: color 0.15s, border-color 0.15s;
+  }
+  .nav-cat:hover { color: white; }
+  .nav-cat.active { color: white; border-bottom-color: var(--amber2); }
+
+  /* ── Main content ── */
+  .main { max-width: 860px; margin: 0 auto; padding: 36px 24px 64px; }
+
+  .section-label {
+    font-size: 10px; letter-spacing: 2px; text-transform: uppercase;
+    color: var(--ink3); margin-bottom: 20px;
+    display: flex; align-items: center; gap: 10px;
+  }
+  .section-label::after {
+    content: ''; flex: 1; height: 1px; background: var(--rule);
+  }
+
+  /* ── Project grid ── */
+  .project-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+    gap: 16px;
+    margin-bottom: 48px;
+  }
+
+  .project-card {
+    background: var(--white);
+    border: 1px solid var(--rule);
+    border-radius: 6px;
+    overflow: hidden;
+    display: flex; flex-direction: column;
+    transition: box-shadow 0.2s, transform 0.2s;
+    text-decoration: none; color: inherit;
+    position: relative;
+  }
+  .project-card:hover {
+    box-shadow: 0 6px 24px rgba(0,0,0,0.10);
+    transform: translateY(-2px);
+  }
+
+  /* Category corner stamp */
+  .card-stamp {
+    position: absolute; top: 12px; right: 12px;
+    font-size: 9px; font-weight: 700; letter-spacing: 1.5px;
+    text-transform: uppercase; padding: 3px 8px;
+    border-radius: 3px;
+  }
+  .stamp-field   { background: rgba(45,95,138,0.10); color: var(--steel); }
+  .stamp-trip    { background: rgba(61,122,176,0.10); color: var(--steel2); }
+  .stamp-build   { background: rgba(212,130,10,0.12); color: var(--amber); }
+  .stamp-audio   { background: rgba(120,80,160,0.10); color: #7850A0; }
+
+  .card-icon {
+    height: 80px;
+    display: flex; align-items: center; padding: 0 20px;
+    font-size: 36px;
+    background: var(--canvas);
+    border-bottom: 1px solid var(--canvas2);
+  }
+  .card-body-inner { padding: 16px 18px 14px; flex: 1; display: flex; flex-direction: column; }
+  .card-title {
+    font-family: Georgia, serif;
+    font-size: 17px; font-weight: normal;
+    color: var(--ink); margin-bottom: 6px;
+  }
+  .card-desc {
+    font-size: 13px; color: var(--ink2); line-height: 1.6;
+    flex: 1; margin-bottom: 12px;
+  }
+  .card-tags { display: flex; flex-wrap: wrap; gap: 5px; margin-bottom: 14px; }
+  .tag {
+    font-size: 10px; padding: 2px 7px;
+    background: var(--canvas2); color: var(--ink3);
+    border-radius: 3px; letter-spacing: 0.3px;
+  }
+  .card-footer {
+    display: flex; align-items: center; justify-content: space-between;
+    padding-top: 10px; border-top: 1px solid var(--canvas2);
+  }
+  .card-updated { font-size: 10px; color: var(--ink3); font-family: monospace; }
+  .card-cta {
+    font-size: 12px; font-weight: 600;
+    color: var(--steel); letter-spacing: 0.3px;
+    display: flex; align-items: center; gap: 4px;
+  }
+  .card-cta::after { content: '→'; }
+
+  /* Status dots */
+  .status-dot {
+    display: inline-block; width: 7px; height: 7px;
+    border-radius: 50%; margin-right: 5px;
+  }
+  .status-active   { background: #3DAA6A; }
+  .status-beta     { background: var(--amber); }
+  .status-planned  { background: var(--ink3); }
+
+  /* ── Coming soon card ── */
+  .card-placeholder {
+    border: 2px dashed var(--rule);
+    background: transparent;
+  }
+  .card-placeholder .card-icon { background: transparent; border-bottom-color: var(--canvas2); opacity: 0.5; }
+  .card-placeholder .card-title { color: var(--ink3); }
+  .card-placeholder .card-desc { color: var(--ink3); }
+  .card-placeholder:hover { box-shadow: none; transform: none; }
+
+  /* ── About strip ── */
+  .about-strip {
+    background: var(--ink);
+    color: rgba(255,255,255,0.75);
+    border-radius: 6px;
+    padding: 28px 28px;
+    display: flex; gap: 24px; align-items: flex-start; flex-wrap: wrap;
+  }
+  .about-strip .ab-head {
+    font-family: Georgia, serif; font-size: 20px; font-weight: normal;
+    color: white; margin-bottom: 8px;
+  }
+  .about-strip p { font-size: 13px; line-height: 1.7; max-width: 560px; }
+  .about-strip .ab-aside {
+    margin-left: auto; text-align: right; flex-shrink: 0;
+  }
+  .about-strip .ab-aside .big { font-size: 38px; font-family: Georgia, serif; color: var(--amber2); line-height: 1; }
+  .about-strip .ab-aside .lbl { font-size: 10px; text-transform: uppercase; letter-spacing: 1.5px; color: rgba(255,255,255,0.35); margin-top: 4px; }
+
+  /* ── Footer ── */
+  footer {
+    text-align: center; padding: 28px;
+    font-size: 12px; color: var(--ink3);
+    border-top: 1px solid var(--rule);
+    margin-top: 48px;
+  }
+
+  /* ── Filter behavior ── */
+  .project-card.hidden { display: none; }
+
+  @media (max-width: 600px) {
+    .hero { padding: 36px 20px 32px; }
+    .main { padding: 24px 16px 48px; }
+    .hero-stats { gap: 20px; }
+    .about-strip .ab-aside { margin-left: 0; text-align: left; }
+  }
+</style>
+</head>
+<body>
+
+<!-- ── HERO ── -->
+<div class="hero">
+  <div class="hero-inner">
+    <div class="hero-eyebrow">Personal Project Workshop</div>
+    <h1 class="hero-name">Tools built for<br><em>the real world.</em></h1>
+    <p class="hero-desc">A collection of practical, offline-first apps built for field work, travel planning, construction, and beyond. Single-file HTML — no installs, no accounts, works everywhere.</p>
+    <div class="hero-stats">
+      <div class="stat-item">
+        <div class="stat-num">4</div>
+        <div class="stat-label">Active Projects</div>
+      </div>
+      <div class="stat-item">
+        <div class="stat-num">100%</div>
+        <div class="stat-label">Offline Capable</div>
+      </div>
+      <div class="stat-item">
+        <div class="stat-num">0</div>
+        <div class="stat-label">Installs Required</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ── NAV STRIP ── -->
+<div class="nav-strip">
+  <button class="nav-cat active" onclick="filterCards('all', this)">All Projects</button>
+  <button class="nav-cat" onclick="filterCards('field', this)">Field Tools</button>
+  <button class="nav-cat" onclick="filterCards('trip', this)">Trip & Travel</button>
+  <button class="nav-cat" onclick="filterCards('build', this)">Building</button>
+  <button class="nav-cat" onclick="filterCards('audio', this)">Audio</button>
+</div>
+
+<!-- ── MAIN ── -->
+<div class="main">
+
+  <div class="section-label">Active Projects</div>
+
+  <div class="project-grid" id="project-grid">
+
+    <!-- AAONAssist -->
+    <a class="project-card" href="AAONAssist.html" data-cat="field">
+      <span class="card-stamp stamp-field">Field Tool</span>
+      <div class="card-icon">🔧</div>
+      <div class="card-body-inner">
+        <div class="card-title">AAONAssist</div>
+        <div class="card-desc">AAON HVAC field reference — fault codes, guided diagnostics, BACnet/Modbus controls reference, refrigerant calculators, and commissioning checklists.</div>
+        <div class="card-tags">
+          <span class="tag">HVAC</span>
+          <span class="tag">Fault Codes</span>
+          <span class="tag">Calculators</span>
+          <span class="tag">BACnet</span>
+          <span class="tag">Offline</span>
+        </div>
+        <div class="card-footer">
+          <span class="card-updated"><span class="status-dot status-active"></span>Jun 2026 · v1.0</span>
+          <span class="card-cta">Open</span>
+        </div>
+      </div>
+    </a>
+
+    <!-- PackRight -->
+    <a class="project-card" href="PackRight.html" data-cat="trip">
+      <span class="card-stamp stamp-trip">Trip & Travel</span>
+      <div class="card-icon">🎒</div>
+      <div class="card-body-inner">
+        <div class="card-title">PackRight</div>
+        <div class="card-desc">Cross-platform trip planner and packing checklist with 8 activity templates, destination planner, recipe importer, and smart grocery merge engine.</div>
+        <div class="card-tags">
+          <span class="tag">Packing</span>
+          <span class="tag">Camping</span>
+          <span class="tag">Boating</span>
+          <span class="tag">RV</span>
+          <span class="tag">Groceries</span>
+        </div>
+        <div class="card-footer">
+          <span class="card-updated"><span class="status-dot status-active"></span>2026 · Active</span>
+          <span class="card-cta">Open</span>
+        </div>
+      </div>
+    </a>
+
+    <!-- StructurePro -->
+    <a class="project-card" href="StructurePro.html" data-cat="build">
+      <span class="card-stamp stamp-build">Building</span>
+      <div class="card-icon">🏗️</div>
+      <div class="card-body-inner">
+        <div class="card-title">StructurePro</div>
+        <div class="card-desc">Offline outdoor building assistant covering structural design, building codes, floor plan tools, permit documentation, materials lists, and cut lists.</div>
+        <div class="card-tags">
+          <span class="tag">Structural</span>
+          <span class="tag">Codes</span>
+          <span class="tag">Materials</span>
+          <span class="tag">Cut List</span>
+          <span class="tag">Permits</span>
+        </div>
+        <div class="card-footer">
+          <span class="card-updated"><span class="status-dot status-beta"></span>2026 · In Progress</span>
+          <span class="card-cta">Open</span>
+        </div>
+      </div>
+    </a>
+
+    <!-- DS2 Transcriber -->
+    <a class="project-card" href="DS2Transcriber.html" data-cat="audio">
+      <span class="card-stamp stamp-audio">Audio</span>
+      <div class="card-icon">🎙️</div>
+      <div class="card-body-inner">
+        <div class="card-title">DS2 Transcriber</div>
+        <div class="card-desc">Audio transcription tool supporting DS2, MP3, WAV, M4A, FLAC, and AAC. Waveform scrubbing, playback controls, speed adjustment, and AI-powered transcription.</div>
+        <div class="card-tags">
+          <span class="tag">DS2</span>
+          <span class="tag">Transcription</span>
+          <span class="tag">Audio</span>
+          <span class="tag">Waveform</span>
+        </div>
+        <div class="card-footer">
+          <span class="card-updated"><span class="status-dot status-active"></span>2026 · Active</span>
+          <span class="card-cta">Open</span>
+        </div>
+      </div>
+    </a>
+
+    <!-- Placeholder -->
+    <div class="project-card card-placeholder" data-cat="all">
+      <div class="card-icon">＋</div>
+      <div class="card-body-inner">
+        <div class="card-title" style="color:var(--ink3)">Next Project</div>
+        <div class="card-desc" style="color:var(--ink3)">Something useful is always in the works. Check back soon.</div>
+        <div class="card-footer">
+          <span class="card-updated" style="color:var(--rule)">Coming soon</span>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- ── About ── -->
+  <div class="about-strip">
+    <div style="flex:1; min-width:200px;">
+      <div class="ab-head">Built to solve real problems.</div>
+      <p>These tools come out of actual needs — planning camping trips, supporting field technicians, managing building projects. Every app runs as a single HTML file: open it in any browser, on any device, with or without internet. No backend, no login, no subscription.</p>
+    </div>
+    <div class="ab-aside">
+      <div class="big">HTML</div>
+      <div class="lbl">Single-file apps</div>
+    </div>
+  </div>
+
+</div>
+
+<!-- ── FOOTER ── -->
+<footer>
+  Carlos's Project Workshop &nbsp;·&nbsp; Built offline-first, works everywhere &nbsp;·&nbsp; Updated June 2026
+</footer>
+
+<script>
+function filterCards(cat, btn) {
+  document.querySelectorAll('.nav-cat').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  document.querySelectorAll('.project-card').forEach(card => {
+    const cardCat = card.dataset.cat;
+    if (cat === 'all' || cardCat === cat || cardCat === 'all') {
+      card.classList.remove('hidden');
+    } else {
+      card.classList.add('hidden');
+    }
+  });
+}
+</script>
+
+</body>
+</html>

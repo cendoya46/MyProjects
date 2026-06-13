@@ -1,0 +1,2103 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>StructurePro — Offline Outdoor Building Assistant</title>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Roboto+Slab:wght@300;400;600&family=Share+Tech+Mono&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg:#0d1117; --bg2:#161b22; --bg3:#1c2333; --border:#2d3748;
+  --amber:#f6a623; --amber-dim:#c47d0e; --amber-glow:rgba(246,166,35,0.12);
+  --cyan:#4fc3f7; --red:#ef5350; --green:#66bb6a;
+  --text:#e2e8f0; --text-dim:#718096; --text-muted:#4a5568;
+  --grid-line:rgba(79,195,247,0.07); --grid-major:rgba(79,195,247,0.13);
+}
+*{margin:0;padding:0;box-sizing:border-box;}
+body{background:var(--bg);color:var(--text);font-family:'Roboto Slab',serif;min-height:100vh;overflow-x:hidden;}
+body::before{content:'';position:fixed;inset:0;background-image:linear-gradient(var(--grid-major) 1px,transparent 1px),linear-gradient(90deg,var(--grid-major) 1px,transparent 1px),linear-gradient(var(--grid-line) 1px,transparent 1px),linear-gradient(90deg,var(--grid-line) 1px,transparent 1px);background-size:80px 80px,80px 80px,16px 16px,16px 16px;pointer-events:none;z-index:0;}
+.app{position:relative;z-index:1;max-width:1400px;margin:0 auto;padding:0 16px;}
+
+header{padding:20px 0 14px;border-bottom:2px solid var(--amber);margin-bottom:20px;display:flex;align-items:center;gap:16px;flex-wrap:wrap;}
+.logo-mark{width:48px;height:48px;border:2px solid var(--amber);display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+.logo-mark svg{width:30px;height:30px;}
+.header-text h1{font-family:'Bebas Neue',cursive;font-size:clamp(24px,4vw,44px);color:var(--amber);letter-spacing:3px;line-height:1;}
+.header-text p{font-family:'Share Tech Mono',monospace;font-size:10px;color:var(--cyan);letter-spacing:2px;text-transform:uppercase;margin-top:3px;}
+.offline-badge{margin-left:auto;background:rgba(102,187,106,0.15);border:1px solid var(--green);color:var(--green);font-family:'Share Tech Mono',monospace;font-size:10px;padding:5px 12px;letter-spacing:2px;}
+
+.main-grid{display:grid;grid-template-columns:310px 1fr;gap:18px;align-items:start;}
+@media(max-width:880px){.main-grid{grid-template-columns:1fr;}}
+
+.panel{background:var(--bg2);border:1px solid var(--border);padding:18px;position:relative;}
+.panel::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,var(--amber),transparent);}
+.panel-title{font-family:'Bebas Neue',cursive;font-size:17px;color:var(--amber);letter-spacing:2px;margin-bottom:14px;display:flex;align-items:center;gap:8px;}
+.panel-title .sn{font-family:'Share Tech Mono',monospace;font-size:10px;color:var(--bg2);background:var(--amber);width:18px;height:18px;display:flex;align-items:center;justify-content:center;font-weight:bold;flex-shrink:0;}
+
+.form-group{margin-bottom:13px;}
+.form-group label{display:block;font-family:'Share Tech Mono',monospace;font-size:10px;color:var(--text-dim);letter-spacing:1.5px;text-transform:uppercase;margin-bottom:5px;}
+.form-group input,.form-group select{width:100%;background:var(--bg3);border:1px solid var(--border);color:var(--text);padding:9px 11px;font-family:'Share Tech Mono',monospace;font-size:12px;outline:none;transition:border-color .2s;appearance:none;}
+.form-group input:focus,.form-group select:focus{border-color:var(--amber);box-shadow:0 0 0 2px var(--amber-glow);}
+.form-group select option{background:var(--bg3);}
+.dim-row{display:grid;grid-template-columns:1fr 1fr 1fr;gap:7px;}
+.dim-row .form-group{margin-bottom:0;}
+
+.btn{display:inline-flex;align-items:center;gap:7px;padding:11px 18px;font-family:'Bebas Neue',cursive;font-size:15px;letter-spacing:2px;cursor:pointer;border:none;transition:all .2s;width:100%;justify-content:center;}
+.btn-primary{background:var(--amber);color:var(--bg);}
+.btn-primary:hover{background:#ffd54f;transform:translateY(-1px);box-shadow:0 4px 20px rgba(246,166,35,.4);}
+.btn-sm{background:transparent;color:var(--cyan);border:1px solid var(--cyan);font-size:12px;padding:7px 14px;width:auto;letter-spacing:1px;}
+.btn-sm:hover{background:rgba(79,195,247,.1);}
+
+.tab-bar{display:flex;gap:2px;border-bottom:2px solid var(--border);flex-wrap:wrap;}
+.tab-btn{background:none;border:none;color:var(--text-dim);font-family:'Share Tech Mono',monospace;font-size:10px;letter-spacing:1px;padding:9px 12px;cursor:pointer;text-transform:uppercase;transition:all .2s;border-bottom:2px solid transparent;margin-bottom:-2px;white-space:nowrap;}
+.tab-btn:hover{color:var(--text);}
+.tab-btn.active{color:var(--amber);border-bottom-color:var(--amber);}
+.tab-content{display:none;padding-top:18px;}
+.tab-content.active{display:block;}
+
+.output-panel{background:var(--bg2);border:1px solid var(--border);min-height:520px;position:relative;display:flex;flex-direction:column;}
+.output-panel::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,var(--cyan),transparent);}
+.output-header{padding:14px 18px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;}
+.output-header h2{font-family:'Bebas Neue',cursive;font-size:18px;color:var(--cyan);letter-spacing:2px;}
+.output-body{padding:18px;flex:1;overflow:auto;}
+
+.status-bar{display:flex;align-items:center;gap:8px;padding:7px 18px;background:var(--bg3);border-top:1px solid var(--border);font-family:'Share Tech Mono',monospace;font-size:10px;color:var(--text-dim);letter-spacing:1px;}
+.status-dot{width:7px;height:7px;border-radius:50%;background:var(--text-muted);flex-shrink:0;}
+.status-dot.ok{background:var(--green);}
+.status-dot.warn{background:var(--amber);}
+
+/* Result cards */
+.section-card{background:var(--bg3);border:1px solid var(--border);padding:16px;margin-bottom:14px;}
+.section-card h3{font-family:'Bebas Neue',cursive;font-size:16px;color:var(--amber);letter-spacing:2px;margin-bottom:10px;}
+.section-card h4{font-family:'Share Tech Mono',monospace;font-size:11px;color:var(--cyan);letter-spacing:1px;margin:12px 0 6px;text-transform:uppercase;}
+.info-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:8px;margin-bottom:10px;}
+.info-item{background:var(--bg);border:1px solid var(--border);padding:10px;}
+.info-item .label{font-family:'Share Tech Mono',monospace;font-size:9px;color:var(--text-muted);letter-spacing:1px;text-transform:uppercase;margin-bottom:4px;}
+.info-item .value{font-family:'Share Tech Mono',monospace;font-size:13px;color:var(--text);}
+.info-item .value.big{font-size:18px;color:var(--amber);}
+.info-item .value.cyan{color:var(--cyan);}
+.info-item .value.green{color:var(--green);}
+.info-item .value.red{color:var(--red);}
+
+.alert{padding:10px 14px;margin-bottom:10px;font-family:'Share Tech Mono',monospace;font-size:11px;letter-spacing:1px;border-left:3px solid;}
+.alert-warn{border-color:var(--amber);background:rgba(246,166,35,.08);color:var(--amber);}
+.alert-info{border-color:var(--cyan);background:rgba(79,195,247,.08);color:var(--cyan);}
+.alert-ok{border-color:var(--green);background:rgba(102,187,106,.08);color:var(--green);}
+.alert-red{border-color:var(--red);background:rgba(239,83,80,.08);color:var(--red);}
+
+/* Tables */
+table{width:100%;border-collapse:collapse;font-family:'Share Tech Mono',monospace;font-size:11px;margin:8px 0;}
+th{background:var(--bg);color:var(--amber);padding:7px 10px;text-align:left;border:1px solid var(--border);letter-spacing:1px;text-transform:uppercase;font-size:10px;}
+td{padding:6px 10px;border:1px solid var(--border);color:var(--text);vertical-align:top;}
+tr:nth-child(even) td{background:rgba(255,255,255,.02);}
+.td-num{text-align:right;color:var(--cyan);}
+.td-key{color:var(--amber);}
+
+.canvas-wrap{background:#0a1628;border:1px solid var(--border);display:flex;align-items:center;justify-content:center;padding:12px;overflow:auto;flex-direction:column;gap:12px;}
+canvas{display:block;max-width:100%;}
+
+.chip{display:inline-flex;align-items:center;background:var(--bg3);border:1px solid var(--border);color:var(--text-dim);font-family:'Share Tech Mono',monospace;font-size:9px;padding:3px 7px;letter-spacing:1px;margin:2px;}
+.chip.amber{border-color:var(--amber);color:var(--amber);}
+.chip.cyan{border-color:var(--cyan);color:var(--cyan);}
+.chip.green{border-color:var(--green);color:var(--green);}
+
+.empty-state{display:flex;flex-direction:column;align-items:center;justify-content:center;height:320px;gap:12px;color:var(--text-muted);}
+.empty-state p{font-family:'Share Tech Mono',monospace;font-size:11px;letter-spacing:1px;text-align:center;}
+
+::-webkit-scrollbar{width:5px;height:5px;}
+::-webkit-scrollbar-track{background:var(--bg);}
+::-webkit-scrollbar-thumb{background:var(--border);}
+::-webkit-scrollbar-thumb:hover{background:var(--amber);}
+
+@media print{
+  body{background:#fff;color:#000;}
+  body::before{display:none;}
+  .no-print{display:none!important;}
+  .output-panel{border:none;}
+  table{color:#000;}
+  th{background:#f0f0f0;color:#333;}
+  td{color:#111;}
+  .section-card{background:#fff;border:1px solid #ccc;}
+  .section-card h3{color:#b7791f;}
+  .section-card h4{color:#2b6cb0;}
+  .info-item{background:#f9f9f9;border:1px solid #ddd;}
+  .info-item .value{color:#333;}
+  .info-item .value.big{color:#b7791f;}
+  .alert-warn{background:#fffbeb;color:#92400e;}
+  .alert-info{background:#ebf8ff;color:#2b6cb0;}
+  .alert-ok{background:#f0fff4;color:#276749;}
+  .alert-red{background:#fff5f5;color:#c53030;}
+}
+</style>
+</head>
+<body>
+<div class="app">
+
+<header>
+  <div class="logo-mark">
+    <svg viewBox="0 0 32 32" fill="none">
+      <rect x="4" y="18" width="24" height="3" fill="#f6a623"/>
+      <polygon points="16,4 2,18 30,18" fill="none" stroke="#f6a623" stroke-width="2"/>
+      <rect x="12" y="21" width="8" height="7" fill="none" stroke="#4fc3f7" stroke-width="1.5"/>
+      <line x1="16" y1="21" x2="16" y2="28" stroke="#4fc3f7" stroke-width="1"/>
+    </svg>
+  </div>
+  <div class="header-text">
+    <h1>StructurePro</h1>
+    <p>Offline Outdoor Building Assistant — No Account Required</p>
+  </div>
+  <div class="offline-badge no-print">⬤ OFFLINE MODE</div>
+</header>
+
+<div class="main-grid">
+  <!-- LEFT PANEL -->
+  <div class="no-print">
+    <div class="panel">
+      <div class="panel-title"><span class="sn">1</span> Project Setup</div>
+
+      <div class="form-group">
+        <label>Structure Type</label>
+        <select id="structureType">
+          <option value="shed">Storage Shed</option>
+          <option value="pergola">Pergola</option>
+          <option value="deck">Deck / Patio</option>
+          <option value="garage">Detached Garage</option>
+          <option value="carport">Carport</option>
+          <option value="gazebo">Gazebo</option>
+          <option value="barn">Pole Barn</option>
+          <option value="greenhouse">Greenhouse</option>
+          <option value="workshop">Workshop</option>
+          <option value="playhouse">Playhouse</option>
+        </select>
+      </div>
+
+      <div class="form-group">
+        <label>State</label>
+        <select id="stateSelect">
+          <option value="">-- Select State --</option>
+          <option>Alabama</option><option>Alaska</option><option>Arizona</option>
+          <option>Arkansas</option><option>California</option><option>Colorado</option>
+          <option>Connecticut</option><option>Delaware</option><option>Florida</option>
+          <option>Georgia</option><option>Hawaii</option><option>Idaho</option>
+          <option>Illinois</option><option>Indiana</option><option>Iowa</option>
+          <option>Kansas</option><option>Kentucky</option><option>Louisiana</option>
+          <option>Maine</option><option>Maryland</option><option>Massachusetts</option>
+          <option>Michigan</option><option>Minnesota</option><option>Mississippi</option>
+          <option>Missouri</option><option>Montana</option><option>Nebraska</option>
+          <option>Nevada</option><option>New Hampshire</option><option>New Jersey</option>
+          <option>New Mexico</option><option>New York</option><option>North Carolina</option>
+          <option>North Dakota</option><option>Ohio</option><option>Oklahoma</option>
+          <option>Oregon</option><option>Pennsylvania</option><option>Rhode Island</option>
+          <option>South Carolina</option><option>South Dakota</option><option>Tennessee</option>
+          <option>Texas</option><option>Utah</option><option>Vermont</option>
+          <option>Virginia</option><option>Washington</option><option>West Virginia</option>
+          <option>Wisconsin</option><option>Wyoming</option>
+        </select>
+      </div>
+
+      <div class="form-group">
+        <label>County / City (for notes)</label>
+        <input type="text" id="countyCity" placeholder="e.g. Travis County, Austin"/>
+      </div>
+
+      <div class="panel-title" style="margin-top:18px"><span class="sn">2</span> Dimensions</div>
+      <div class="dim-row">
+        <div class="form-group"><label>Width (ft)</label><input type="number" id="dimW" min="4" max="100" value="12"/></div>
+        <div class="form-group"><label>Length (ft)</label><input type="number" id="dimL" min="4" max="200" value="16"/></div>
+        <div class="form-group"><label>Wall Ht (ft)</label><input type="number" id="dimH" min="6" max="24" value="8"/></div>
+      </div>
+
+      <div class="form-group" style="margin-top:13px">
+        <label>Roof Style</label>
+        <select id="roofStyle">
+          <option value="gable">Gable (A-Frame)</option>
+          <option value="shed">Shed (Single Slope)</option>
+          <option value="hip">Hip Roof</option>
+          <option value="gambrel">Gambrel (Barn)</option>
+          <option value="flat">Flat</option>
+          <option value="open">Open / No Roof</option>
+        </select>
+      </div>
+
+      <div class="form-group">
+        <label>Roof Pitch (x:12)</label>
+        <select id="roofPitch">
+          <option value="2">2:12 (Low)</option>
+          <option value="3">3:12</option>
+          <option value="4" selected>4:12 (Standard)</option>
+          <option value="5">5:12</option>
+          <option value="6">6:12 (Medium)</option>
+          <option value="7">7:12</option>
+          <option value="8">8:12 (Steep)</option>
+          <option value="10">10:12</option>
+          <option value="12">12:12 (Very Steep)</option>
+        </select>
+      </div>
+
+      <div class="form-group">
+        <label>Foundation Type</label>
+        <select id="foundation">
+          <option value="slab">Concrete Slab</option>
+          <option value="piers">Concrete Piers / Footings</option>
+          <option value="gravel">Gravel Pad</option>
+          <option value="blocks">Deck Blocks</option>
+          <option value="none">None / Skids</option>
+        </select>
+      </div>
+
+      <div class="form-group">
+        <label>Primary Lumber</label>
+        <select id="lumberGrade">
+          <option value="pt">Pressure Treated (PT)</option>
+          <option value="df">Douglas Fir #2</option>
+          <option value="syp">Southern Yellow Pine</option>
+          <option value="cedar">Western Red Cedar</option>
+        </select>
+      </div>
+
+      <div class="form-group">
+        <label>Stud Spacing</label>
+        <select id="studSpacing">
+          <option value="16">16" O.C. (Standard)</option>
+          <option value="24">24" O.C. (Economy)</option>
+          <option value="12">12" O.C. (Heavy Load)</option>
+        </select>
+      </div>
+
+      <div class="panel-title" style="margin-top:18px"><span class="sn">3</span> Generate</div>
+      <button class="btn btn-primary" onclick="generate()">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M9 3H5a2 2 0 00-2 2v4m6-6h10a2 2 0 012 2v4M9 3v18m0 0h10a2 2 0 002-2V9M9 21H5a2 2 0 01-2-2V9m0 0h18"/></svg>
+        Calculate &amp; Generate Plans
+      </button>
+    </div>
+  </div>
+
+  <!-- RIGHT OUTPUT -->
+  <div class="output-panel">
+    <div class="output-header">
+      <h2 id="outputTitle">Results</h2>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;" class="no-print">
+        <button class="btn btn-sm" id="btnPrint" onclick="window.print()" disabled>⎙ Print / PDF</button>
+      </div>
+    </div>
+
+    <div style="padding:0 18px;padding-top:14px;" class="no-print">
+      <div class="tab-bar">
+        <button class="tab-btn active" onclick="switchTab('codes')" id="tab-codes">📋 Codes</button>
+        <button class="tab-btn" onclick="switchTab('design')" id="tab-design">📐 Design</button>
+        <button class="tab-btn" onclick="switchTab('floorplan')" id="tab-floorplan">🗺 Floor Plan</button>
+        <button class="tab-btn" onclick="switchTab('permit')" id="tab-permit">📄 Permit</button>
+        <button class="tab-btn" onclick="switchTab('materials')" id="tab-materials">🪵 Materials</button>
+        <button class="tab-btn" onclick="switchTab('cutlist')" id="tab-cutlist">✂️ Cut List</button>
+        <button class="tab-btn" onclick="switchTab('build')" id="tab-build">🔨 Build Guide</button>
+      </div>
+    </div>
+
+    <div class="output-body" id="outputBody">
+      <div class="tab-content active" id="tab-codes-content">
+        <div class="empty-state">
+          <svg width="56" height="56" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+          <p>Select structure type, state &amp; dimensions<br/>then click CALCULATE &amp; GENERATE PLANS</p>
+        </div>
+      </div>
+      <div class="tab-content" id="tab-design-content"></div>
+      <div class="tab-content" id="tab-floorplan-content"></div>
+      <div class="tab-content" id="tab-permit-content"></div>
+      <div class="tab-content" id="tab-materials-content"></div>
+      <div class="tab-content" id="tab-cutlist-content"></div>
+      <div class="tab-content" id="tab-build-content"></div>
+    </div>
+
+    <div class="status-bar">
+      <div class="status-dot" id="statusDot"></div>
+      <span id="statusText">Ready — fill in project details and generate</span>
+    </div>
+  </div>
+</div>
+<div style="height:40px;"></div>
+</div>
+
+<script>
+// ============================================================
+// STATE BUILDING CODE DATABASE
+// Sources: IRC 2021, state amendments, typical permit thresholds
+// Note: Always verify with local building department
+// ============================================================
+const STATE_CODES = {
+  "Alabama":      {permitThreshold:144,maxHeightNoPermit:0,setbackFront:25,setbackSide:5,setbackRear:5,windZone:"115 mph",snowLoad:0,notes:"Follows IRC. Most counties require permit for structures over 144 sq ft."},
+  "Alaska":       {permitThreshold:200,maxHeightNoPermit:0,setbackFront:25,setbackSide:5,setbackRear:10,windZone:"110 mph",snowLoad:40,notes:"High snow loads — contact local AHJ. Many rural areas exempt from state code."},
+  "Arizona":      {permitThreshold:200,maxHeightNoPermit:0,setbackFront:20,setbackSide:5,setbackRear:5,windZone:"90 mph",snowLoad:0,notes:"Desert regions: heat and UV resistance important. Check county rules — state threshold varies widely."},
+  "Arkansas":     {permitThreshold:256,maxHeightNoPermit:0,setbackFront:25,setbackSide:5,setbackRear:5,windZone:"90 mph",snowLoad:10,notes:"Many rural areas unincorporated. Check city/county jurisdiction."},
+  "California":   {permitThreshold:120,maxHeightNoPermit:0,setbackFront:20,setbackSide:5,setbackRear:5,windZone:"110 mph",snowLoad:0,notes:"Strict seismic requirements. Title 24 energy codes apply. Fire-hardened materials may be required in high fire zones (HFHSZs). Many counties: 120 sq ft threshold."},
+  "Colorado":     {permitThreshold:120,maxHeightNoPermit:0,setbackFront:25,setbackSide:5,setbackRear:5,windZone:"100 mph",snowLoad:30,notes:"Snow load varies significantly by elevation. Mountain counties can require 100+ psf. Check local AHJ."},
+  "Connecticut":  {permitThreshold:200,maxHeightNoPermit:0,setbackFront:25,setbackSide:8,setbackRear:10,windZone:"110 mph",snowLoad:30,notes:"Coastal areas: additional wind requirements. CT State Building Code follows IRC with amendments."},
+  "Delaware":     {permitThreshold:200,maxHeightNoPermit:0,setbackFront:25,setbackSide:5,setbackRear:10,windZone:"110 mph",snowLoad:20,notes:"Coastal influence. Check local flood zone requirements if near water."},
+  "Florida":      {permitThreshold:0,maxHeightNoPermit:0,setbackFront:25,setbackSide:7.5,setbackRear:7.5,windZone:"130-170 mph",snowLoad:0,notes:"PERMIT REQUIRED for virtually all structures. Florida Building Code is among the strictest. Wind design critical — use FBC wind maps. Hurricane ties mandatory. Statewide threshold: permit almost always required."},
+  "Georgia":      {permitThreshold:144,maxHeightNoPermit:0,setbackFront:25,setbackSide:5,setbackRear:5,windZone:"115 mph",snowLoad:0,notes:"Follows IRC. Most counties: permit required over 144 sq ft. Coastal counties: additional wind requirements."},
+  "Hawaii":       {permitThreshold:0,maxHeightNoPermit:0,setbackFront:20,setbackSide:5,setbackRear:5,windZone:"130 mph",snowLoad:0,notes:"Permit required for most structures. High wind and seismic zone. HRS Chapter 46 governs local building codes."},
+  "Idaho":        {permitThreshold:200,maxHeightNoPermit:0,setbackFront:20,setbackSide:5,setbackRear:5,windZone:"90 mph",snowLoad:25,notes:"Snow load varies by region. Northern Idaho can be significant. Many rural areas may be exempt."},
+  "Illinois":     {permitThreshold:70,maxHeightNoPermit:0,setbackFront:30,setbackSide:5,setbackRear:5,windZone:"90 mph",snowLoad:25,notes:"Chicago metro has very strict codes. Downstate more lenient. Check municipal codes — varies dramatically by city."},
+  "Indiana":      {permitThreshold:200,maxHeightNoPermit:0,setbackFront:25,setbackSide:5,setbackRear:5,windZone:"90 mph",snowLoad:20,notes:"Follows IRC with state amendments. Many townships exempt from state code."},
+  "Iowa":         {permitThreshold:200,maxHeightNoPermit:0,setbackFront:25,setbackSide:5,setbackRear:5,windZone:"90 mph",snowLoad:25,notes:"Tornado-prone region. Consider wind bracing beyond minimum code."},
+  "Kansas":       {permitThreshold:256,maxHeightNoPermit:0,setbackFront:25,setbackSide:5,setbackRear:5,windZone:"115 mph",snowLoad:20,notes:"High wind / tornado zone. Many rural counties unincorporated — check local jurisdiction."},
+  "Kentucky":     {permitThreshold:200,maxHeightNoPermit:0,setbackFront:25,setbackSide:5,setbackRear:5,windZone:"90 mph",snowLoad:20,notes:"Follows KBC (Kentucky Building Code) based on IRC. Check county requirements."},
+  "Louisiana":    {permitThreshold:0,maxHeightNoPermit:0,setbackFront:25,setbackSide:5,setbackRear:5,windZone:"130-150 mph",snowLoad:0,notes:"Hurricane zone — wind design critical. Permit almost always required in coastal parishes. Flood elevation requirements apply in many areas."},
+  "Maine":        {permitThreshold:200,maxHeightNoPermit:0,setbackFront:25,setbackSide:10,setbackRear:10,windZone:"110 mph",snowLoad:40,notes:"High snow load. Ground snow load can be 50-100+ psf in northern areas. Shoreland zoning may restrict structures near water."},
+  "Maryland":     {permitThreshold:150,maxHeightNoPermit:0,setbackFront:25,setbackSide:5,setbackRear:5,windZone:"110 mph",snowLoad:25,notes:"Coastal counties: wind requirements. Check HOA and county codes. Baltimore City has strict codes."},
+  "Massachusetts":{permitThreshold:200,maxHeightNoPermit:0,setbackFront:20,setbackSide:10,setbackRear:10,windZone:"110 mph",snowLoad:35,notes:"780 CMR Massachusetts Building Code. Coastal areas: flood and wind. Wetlands regulations may apply."},
+  "Michigan":     {permitThreshold:200,maxHeightNoPermit:0,setbackFront:25,setbackSide:5,setbackRear:5,windZone:"90 mph",snowLoad:30,notes:"Upper Peninsula: heavy snow. Check local municipality. Michigan Residential Code follows IRC."},
+  "Minnesota":    {permitThreshold:200,maxHeightNoPermit:0,setbackFront:30,setbackSide:5,setbackRear:5,windZone:"90 mph",snowLoad:35,notes:"Heavy snow loads. Northern MN can require 50+ psf. Follow MSBC (Minnesota State Building Code)."},
+  "Mississippi":  {permitThreshold:144,maxHeightNoPermit:0,setbackFront:25,setbackSide:5,setbackRear:5,windZone:"130 mph",snowLoad:0,notes:"Coastal counties: hurricane wind design. Some rural counties unincorporated."},
+  "Missouri":     {permitThreshold:200,maxHeightNoPermit:0,setbackFront:25,setbackSide:5,setbackRear:5,windZone:"90 mph",snowLoad:20,notes:"Tornado-prone. St. Louis and Kansas City metro have stricter codes. Many rural areas limited code enforcement."},
+  "Montana":      {permitThreshold:200,maxHeightNoPermit:0,setbackFront:25,setbackSide:5,setbackRear:5,windZone:"90 mph",snowLoad:30,notes:"Snow load varies dramatically by elevation. Many rural areas exempt from state building code."},
+  "Nebraska":     {permitThreshold:200,maxHeightNoPermit:0,setbackFront:25,setbackSide:5,setbackRear:5,windZone:"115 mph",snowLoad:20,notes:"High wind zone. Tornado risk. Many rural areas unincorporated."},
+  "Nevada":       {permitThreshold:200,maxHeightNoPermit:0,setbackFront:20,setbackSide:5,setbackRear:5,windZone:"90 mph",snowLoad:0,notes:"Clark County (Las Vegas) and Washoe County have their own strict codes. Rural Nevada largely unregulated."},
+  "New Hampshire":{permitThreshold:200,maxHeightNoPermit:0,setbackFront:25,setbackSide:10,setbackRear:10,windZone:"110 mph",snowLoad:40,notes:"Heavy snow. NH Building Code based on IBC/IRC. Shoreland protection rules."},
+  "New Jersey":   {permitThreshold:0,maxHeightNoPermit:0,setbackFront:25,setbackSide:5,setbackRear:5,windZone:"110 mph",snowLoad:25,notes:"Permit required for virtually all structures. NJUCC (Uniform Construction Code) is strict. Coastal areas: CAFRA regulations."},
+  "New Mexico":   {permitThreshold:200,maxHeightNoPermit:0,setbackFront:20,setbackSide:5,setbackRear:5,windZone:"100 mph",snowLoad:10,notes:"High desert — UV and thermal movement important. Check local municipality."},
+  "New York":     {permitThreshold:144,maxHeightNoPermit:0,setbackFront:25,setbackSide:5,setbackRear:5,windZone:"110 mph",snowLoad:30,notes:"NYC has the most complex code in the US. Upstate: heavy snow in some areas. Check local municipality — codes vary dramatically."},
+  "North Carolina":{permitThreshold:144,maxHeightNoPermit:0,setbackFront:25,setbackSide:5,setbackRear:5,windZone:"115-130 mph",snowLoad:0,notes:"Coastal counties: hurricane wind design. NC Residential Code follows IRC with amendments."},
+  "North Dakota": {permitThreshold:200,maxHeightNoPermit:0,setbackFront:25,setbackSide:5,setbackRear:5,windZone:"90 mph",snowLoad:30,notes:"Heavy snow. Many rural areas have limited code enforcement."},
+  "Ohio":         {permitThreshold:200,maxHeightNoPermit:0,setbackFront:25,setbackSide:5,setbackRear:5,windZone:"90 mph",snowLoad:25,notes:"Ohio Residential Code follows IRC. Check local township and city codes."},
+  "Oklahoma":     {permitThreshold:200,maxHeightNoPermit:0,setbackFront:25,setbackSide:5,setbackRear:5,windZone:"115 mph",snowLoad:10,notes:"Tornado Alley — high wind design important. Many rural counties unincorporated."},
+  "Oregon":       {permitThreshold:200,maxHeightNoPermit:0,setbackFront:20,setbackSide:5,setbackRear:5,windZone:"95 mph",snowLoad:25,notes:"Seismic zone. Western OR: rain exposure — use weather-resistant materials. Oregon Residential Specialty Code."},
+  "Pennsylvania": {permitThreshold:256,maxHeightNoPermit:0,setbackFront:25,setbackSide:5,setbackRear:5,windZone:"90 mph",snowLoad:30,notes:"PA UCC (Uniform Construction Code). Many townships exempt. Check local municipality."},
+  "Rhode Island": {permitThreshold:200,maxHeightNoPermit:0,setbackFront:20,setbackSide:8,setbackRear:10,windZone:"110 mph",snowLoad:30,notes:"Coastal state — wind and flood considerations. RI State Building Code."},
+  "South Carolina":{permitThreshold:144,maxHeightNoPermit:0,setbackFront:25,setbackSide:5,setbackRear:5,windZone:"115-130 mph",snowLoad:0,notes:"Coastal: hurricane wind zone. SC Residential Code follows IRC."},
+  "South Dakota": {permitThreshold:200,maxHeightNoPermit:0,setbackFront:25,setbackSide:5,setbackRear:5,windZone:"90 mph",snowLoad:30,notes:"Heavy snow in west. Many rural areas limited regulation."},
+  "Tennessee":    {permitThreshold:144,maxHeightNoPermit:0,setbackFront:25,setbackSide:5,setbackRear:5,windZone:"90 mph",snowLoad:10,notes:"Tennessee Residential Building Code follows IRC. Check local municipality."},
+  "Texas":        {permitThreshold:0,maxHeightNoPermit:0,setbackFront:25,setbackSide:5,setbackRear:5,windZone:"110-150 mph",snowLoad:0,notes:"No statewide building code for residential — regulated by municipality. Many rural areas have NO code. Coastal: hurricane design. Always check local city/county."},
+  "Utah":         {permitThreshold:200,maxHeightNoPermit:0,setbackFront:25,setbackSide:5,setbackRear:5,windZone:"90 mph",snowLoad:30,notes:"Snow loads vary significantly by elevation. Seismic considerations along Wasatch Front. Utah Residential Code."},
+  "Vermont":      {permitThreshold:200,maxHeightNoPermit:0,setbackFront:25,setbackSide:10,setbackRear:10,windZone:"90 mph",snowLoad:45,notes:"Heavy snow load. Vermont Fire and Building Safety Division. Act 250 may apply for larger projects."},
+  "Virginia":     {permitThreshold:256,maxHeightNoPermit:0,setbackFront:25,setbackSide:5,setbackRear:5,windZone:"100-115 mph",snowLoad:25,notes:"USBC (Virginia Uniform Statewide Building Code). Coastal tidewater: wind and flood. Check HOV restrictions."},
+  "Washington":   {permitThreshold:200,maxHeightNoPermit:0,setbackFront:20,setbackSide:5,setbackRear:5,windZone:"95 mph",snowLoad:25,notes:"Seismic zone. Western WA: rain — weather-resistant materials. WAC 51-51 Residential Code. Many counties have lower thresholds."},
+  "West Virginia":{permitThreshold:200,maxHeightNoPermit:0,setbackFront:25,setbackSide:5,setbackRear:5,windZone:"90 mph",snowLoad:30,notes:"WV Residential Building Code. Many rural counties limited enforcement."},
+  "Wisconsin":    {permitThreshold:196,maxHeightNoPermit:0,setbackFront:25,setbackSide:5,setbackRear:5,windZone:"90 mph",snowLoad:30,notes:"Wisconsin Uniform Dwelling Code. Permit required for most structures. Heavy snow in northern WI."},
+  "Wyoming":      {permitThreshold:256,maxHeightNoPermit:0,setbackFront:25,setbackSide:5,setbackRear:5,windZone:"100 mph",snowLoad:35,notes:"Many rural counties have no building code. Snow load varies by region and elevation. Check local municipality."}
+};
+
+// ============================================================
+// CONSTRUCTION MATH ENGINE
+// ============================================================
+function calc(cfg) {
+  const {W, L, H, pitch, roofStyle, foundation, studSpacing, lumber} = cfg;
+  const sqft = W * L;
+  const perimeterFt = 2 * (W + L);
+  const pitchRise = pitch / 12;
+
+  // Rafter math
+  const halfSpan = W / 2;
+  const roofRise = halfSpan * pitchRise;
+  const rafterLenFt = Math.sqrt(halfSpan * halfSpan + roofRise * roofRise) + 1.5; // +overhang
+  const roofPeakH = H + roofRise;
+  const ridgeHeight = roofPeakH;
+
+  // Stud counts per wall
+  const studSpacingFt = studSpacing / 12;
+  const studsW = Math.ceil(W / studSpacingFt) + 1;
+  const studsL = Math.ceil(L / studSpacingFt) + 1;
+  const totalStuds = 2 * studsW + 2 * studsL; // 4 walls
+  const cornerStuds = 8; // extra corner studs
+  const totalStudsWithExtra = totalStuds + cornerStuds;
+
+  // Rafter count
+  const rafterSpacingFt = 16 / 12;
+  const rafterCount = (Math.ceil(L / rafterSpacingFt) + 1) * 2; // pairs
+  const hipRafterCount = roofStyle === 'hip' ? 4 : 0;
+
+  // Sheathing
+  const wallSqft = perimeterFt * H;
+  const roofSqft = roofStyle === 'open' ? 0 :
+                   roofStyle === 'gable' || roofStyle === 'hip' ? sqft * 1.15 * (rafterLenFt / halfSpan) :
+                   roofStyle === 'shed' ? sqft * 1.1 :
+                   sqft * 1.2;
+  const wallSheets = Math.ceil((wallSqft * 1.1) / 32); // 4x8 = 32 sqft
+  const roofSheets = Math.ceil((roofSqft * 1.1) / 32);
+
+  // Plates: 3 plates per wall (bottom + double top), linear feet
+  const plateLF = perimeterFt * 3;
+  const platePieces = {
+    '2x4x8': Math.ceil(plateLF / 8),
+    '2x4x10': 0,
+    '2x4x12': 0
+  };
+  const platePcTotal = Math.ceil(plateLF / 8) + Math.ceil((perimeterFt * 1) / 8); // extra for laps
+
+  // Concrete for slab
+  const slabThickFt = 4 / 12;
+  const slabCY = roofStyle !== 'open' ? Math.ceil((sqft * slabThickFt / 27) * 1.1) : 0;
+
+  // Pier footings
+  const pierCols = Math.ceil(W / 8) + 1;
+  const pierRows = Math.ceil(L / 8) + 1;
+  const pierCount = pierCols * pierRows;
+
+  // Joist count for floor/deck
+  const joistCount = roofStyle === 'deck' ? Math.ceil(W / 1.33) + 1 : Math.ceil(L / 1.33) + 1;
+
+  // Roofing
+  const roofSquares = Math.ceil(roofSqft / 100 * 1.15); // squares of shingles (100 sqft)
+
+  // Insulation (if enclosed)
+  const wallInsulBatts = Math.ceil(wallSqft / 14.5 * 1.1); // R-13 batts
+  const roofInsulBatts = roofStyle !== 'open' ? Math.ceil(roofSqft / 14.5 * 1.1) : 0;
+
+  // Estimated cost ranges (rough 2024 regional average)
+  const matCostLow = Math.round(sqft * 8);
+  const matCostHigh = Math.round(sqft * 18);
+  const laborCostLow = Math.round(sqft * 15);
+  const laborCostHigh = Math.round(sqft * 35);
+
+  // Lumber stud size recommendation
+  const studSize = H <= 9 ? '2x4' : '2x6';
+  const beamSize = W <= 12 ? '2x8' : W <= 16 ? '2x10' : '2x12';
+  const rafterSize = halfSpan <= 8 ? '2x6' : halfSpan <= 12 ? '2x8' : '2x10';
+  const ridgeSize = halfSpan <= 8 ? '2x8' : halfSpan <= 12 ? '2x10' : '2x12';
+  const postSize = H <= 10 ? '4x4' : '6x6';
+
+  // Footing depth recommendation (frost depth by region)
+  const footingDepth = 36; // inches — conservative, varies by state
+
+  return {
+    sqft, perimeterFt, roofRise, roofRiseFt: roofRise.toFixed(2),
+    rafterLenFt: rafterLenFt.toFixed(2),
+    rafterLenInches: Math.round(rafterLenFt * 12),
+    ridgeHeight: ridgeHeight.toFixed(1),
+    roofPeakH: roofPeakH.toFixed(1),
+    studsW, studsL, totalStuds, totalStudsWithExtra,
+    rafterCount, hipRafterCount,
+    wallSqft: Math.round(wallSqft),
+    roofSqft: Math.round(roofSqft),
+    wallSheets, roofSheets,
+    platePcTotal,
+    plateLF: Math.round(plateLF),
+    slabCY, pierCount, pierCols, pierRows,
+    joistCount,
+    roofSquares,
+    wallInsulBatts, roofInsulBatts,
+    matCostLow, matCostHigh, laborCostLow, laborCostHigh,
+    studSize, beamSize, rafterSize, ridgeSize, postSize,
+    footingDepth,
+    studSpacing,
+    pitchRise, halfSpan,
+    rafterSpacingFt
+  };
+}
+
+// ============================================================
+// MAIN GENERATE FUNCTION
+// ============================================================
+function generate() {
+  const state = document.getElementById('stateSelect').value;
+  if (!state) { alert('Please select your state.'); return; }
+
+  const cfg = {
+    type: document.getElementById('structureType').value,
+    typeName: document.getElementById('structureType').options[document.getElementById('structureType').selectedIndex].text,
+    state,
+    county: document.getElementById('countyCity').value,
+    W: parseFloat(document.getElementById('dimW').value) || 12,
+    L: parseFloat(document.getElementById('dimL').value) || 16,
+    H: parseFloat(document.getElementById('dimH').value) || 8,
+    pitch: parseInt(document.getElementById('roofPitch').value) || 4,
+    pitchName: document.getElementById('roofPitch').options[document.getElementById('roofPitch').selectedIndex].text,
+    roofStyle: document.getElementById('roofStyle').value,
+    roofStyleName: document.getElementById('roofStyle').options[document.getElementById('roofStyle').selectedIndex].text,
+    foundation: document.getElementById('foundation').value,
+    foundationName: document.getElementById('foundation').options[document.getElementById('foundation').selectedIndex].text,
+    lumber: document.getElementById('lumberGrade').value,
+    lumberName: document.getElementById('lumberGrade').options[document.getElementById('lumberGrade').selectedIndex].text,
+    studSpacing: parseInt(document.getElementById('studSpacing').value) || 16
+  };
+
+  const m = calc(cfg);
+  const codes = STATE_CODES[state] || STATE_CODES['Texas'];
+
+  document.getElementById('outputTitle').textContent = `${cfg.typeName} — ${cfg.W}′×${cfg.L}′ — ${state}`;
+  document.getElementById('statusDot').className = 'status-dot ok';
+  document.getElementById('statusText').textContent = `Generated: ${cfg.typeName} | ${m.sqft} sq ft | ${state}`;
+  document.getElementById('btnPrint').disabled = false;
+
+  renderCodes(cfg, m, codes);
+  renderDesign(cfg, m, codes);
+  renderFloorPlan(cfg, m);
+  renderPermit(cfg, m, codes);
+  renderMaterials(cfg, m, codes);
+  renderCutList(cfg, m);
+  renderBuildGuide(cfg, m);
+
+  switchTab('codes');
+}
+
+function switchTab(name) {
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+  document.getElementById('tab-' + name).classList.add('active');
+  document.getElementById('tab-' + name + '-content').classList.add('active');
+}
+
+// ============================================================
+// TAB 1: BUILDING CODES
+// ============================================================
+function renderCodes(cfg, m, codes) {
+  const needsPermit = m.sqft > codes.permitThreshold || codes.permitThreshold === 0;
+  const el = document.getElementById('tab-codes-content');
+  el.innerHTML = `
+    <div class="section-card">
+      <h3>📋 ${cfg.state} Building Code Summary</h3>
+      <p style="font-family:'Share Tech Mono',monospace;font-size:10px;color:var(--text-dim);margin-bottom:12px;letter-spacing:1px;">
+        Based on IRC 2021 + ${cfg.state} state amendments. Always verify with your local building department.
+      </p>
+      <div class="info-grid">
+        <div class="info-item">
+          <div class="label">Permit Required?</div>
+          <div class="value ${needsPermit ? 'red' : 'green'} big">${needsPermit ? 'YES' : 'LIKELY NO'}</div>
+        </div>
+        <div class="info-item">
+          <div class="label">Your Structure</div>
+          <div class="value big amber">${m.sqft} sq ft</div>
+        </div>
+        <div class="info-item">
+          <div class="label">Permit Threshold</div>
+          <div class="value cyan">${codes.permitThreshold === 0 ? 'Always required' : codes.permitThreshold + ' sq ft'}</div>
+        </div>
+        <div class="info-item">
+          <div class="label">Wind Design Zone</div>
+          <div class="value cyan">${codes.windZone}</div>
+        </div>
+        <div class="info-item">
+          <div class="label">Ground Snow Load</div>
+          <div class="value">${codes.snowLoad === 0 ? 'N/A' : codes.snowLoad + ' psf'}</div>
+        </div>
+        <div class="info-item">
+          <div class="label">Front Setback</div>
+          <div class="value">${codes.setbackFront} ft min</div>
+        </div>
+        <div class="info-item">
+          <div class="label">Side Setback</div>
+          <div class="value">${codes.setbackSide} ft min</div>
+        </div>
+        <div class="info-item">
+          <div class="label">Rear Setback</div>
+          <div class="value">${codes.setbackRear} ft min</div>
+        </div>
+      </div>
+
+      ${needsPermit ? `<div class="alert alert-red">⚠ A building permit is likely required for your ${m.sqft} sq ft structure in ${cfg.state}. Contact your local building department before starting.</div>` : `<div class="alert alert-ok">✓ Structures under ${codes.permitThreshold} sq ft may not require a permit in ${cfg.state} — verify with local AHJ.</div>`}
+      <div class="alert alert-warn">⚑ State notes: ${codes.notes}</div>
+      <div class="alert alert-info">ℹ Setbacks shown are typical minimums. HOA rules, flood zones, and local ordinances may be more restrictive. Always verify with your county/city building department.</div>
+    </div>
+
+    <div class="section-card">
+      <h3>📏 Setback Compliance Check</h3>
+      <p style="font-family:'Share Tech Mono',monospace;font-size:10px;color:var(--text-dim);margin-bottom:10px;">Verify your site meets minimum setbacks before placing the structure.</p>
+      <table>
+        <tr><th>Setback</th><th>Required Min</th><th>Check</th></tr>
+        <tr><td>Front property line</td><td class="td-num">${codes.setbackFront} ft</td><td style="color:var(--text-dim)">Measure from front property line to structure</td></tr>
+        <tr><td>Side property line (left)</td><td class="td-num">${codes.setbackSide} ft</td><td style="color:var(--text-dim)">Measure from left property line</td></tr>
+        <tr><td>Side property line (right)</td><td class="td-num">${codes.setbackSide} ft</td><td style="color:var(--text-dim)">Measure from right property line</td></tr>
+        <tr><td>Rear property line</td><td class="td-num">${codes.setbackRear} ft</td><td style="color:var(--text-dim)">Measure from rear property line</td></tr>
+        <tr><td>Main dwelling</td><td class="td-num">~6 ft</td><td style="color:var(--text-dim)">Typical fire separation — verify locally</td></tr>
+      </table>
+    </div>
+
+    <div class="section-card">
+      <h3>🔍 Key Code Requirements</h3>
+      <h4>Foundation Requirements</h4>
+      <table>
+        <tr><th>Item</th><th>Requirement</th></tr>
+        <tr><td>Frost depth</td><td>Footings below frost line (varies: 12"–48" by state/zone)</td></tr>
+        <tr><td>Bearing capacity</td><td>Min 1,500 psf soil bearing (most residential soils)</td></tr>
+        <tr><td>Slab thickness</td><td>Min 3.5" (4" recommended) for slab-on-grade</td></tr>
+        <tr><td>Post anchor</td><td>All posts must be anchored — no direct burial for most permit structures</td></tr>
+      </table>
+      <h4>Structural Requirements</h4>
+      <table>
+        <tr><th>Item</th><th>Requirement</th></tr>
+        <tr><td>Wall studs</td><td>${cfg.H <= 9 ? '2×4 @ ' + cfg.studSpacing + '"' : '2×6 @ ' + cfg.studSpacing + '"'} O.C. for ${cfg.H}′ walls</td></tr>
+        <tr><td>Double top plate</td><td>Required on load-bearing walls</td></tr>
+        <tr><td>Roof sheathing</td><td>Min 7/16" OSB or 15/32" plywood</td></tr>
+        <tr><td>Roof underlayment</td><td>Min #15 felt or synthetic; ice/water shield in cold climates</td></tr>
+        <tr><td>Hurricane ties</td><td>Required in coastal/high-wind areas</td></tr>
+        <tr><td>Anchor bolts</td><td>1/2" × 7" min, 6 ft O.C., within 12" of corners (for slab)</td></tr>
+      </table>
+      <h4>Electrical (if adding power)</h4>
+      <table>
+        <tr><th>Item</th><th>Requirement</th></tr>
+        <tr><td>Subpanel</td><td>Separate permit usually required</td></tr>
+        <tr><td>GFCI outlets</td><td>Required for all outdoor/garage/shed circuits</td></tr>
+        <tr><td>Conduit</td><td>Underground: min 6" depth (GFCI protected) or 24" in conduit</td></tr>
+      </table>
+    </div>
+  `;
+}
+
+// ============================================================
+// TAB 2: STRUCTURAL DESIGN
+// ============================================================
+function renderDesign(cfg, m, codes) {
+  const el = document.getElementById('tab-design-content');
+  el.innerHTML = `
+    <div class="section-card">
+      <h3>📐 Structural Design — ${cfg.typeName}</h3>
+      <div class="info-grid">
+        <div class="info-item"><div class="label">Wall Stud Size</div><div class="value big amber">${m.studSize}</div></div>
+        <div class="info-item"><div class="label">Rafter Size</div><div class="value big amber">${m.rafterSize}</div></div>
+        <div class="info-item"><div class="label">Ridge Board</div><div class="value cyan">${m.ridgeSize}</div></div>
+        <div class="info-item"><div class="label">Post Size</div><div class="value cyan">${m.postSize}</div></div>
+        <div class="info-item"><div class="label">Beam Size</div><div class="value cyan">${m.beamSize}</div></div>
+        <div class="info-item"><div class="label">Rafter Length</div><div class="value">${m.rafterLenFt} ft</div></div>
+        <div class="info-item"><div class="label">Roof Rise</div><div class="value">${m.roofRiseFt} ft</div></div>
+        <div class="info-item"><div class="label">Peak Height</div><div class="value">${m.roofPeakH} ft</div></div>
+      </div>
+    </div>
+
+    <div class="section-card">
+      <h3>🏗 Foundation Design</h3>
+      <h4>${cfg.foundationName}</h4>
+      ${cfg.foundation === 'slab' ? `
+        <table>
+          <tr><th>Item</th><th>Specification</th></tr>
+          <tr><td>Slab thickness</td><td>4" (100mm) minimum</td></tr>
+          <tr><td>Concrete mix</td><td>3,000 psi minimum (3,500 preferred)</td></tr>
+          <tr><td>Rebar</td><td>#3 rebar @ 18" O.C. each way, or 6×6 W1.4×W1.4 WWF</td></tr>
+          <tr><td>Vapor barrier</td><td>6-mil poly under slab</td></tr>
+          <tr><td>Gravel base</td><td>4" compacted gravel base</td></tr>
+          <tr><td>Concrete volume</td><td>~${m.slabCY} cubic yards (incl. 10% waste)</td></tr>
+          <tr><td>Anchor bolts</td><td>1/2" × 7" J-bolts @ 6 ft O.C., within 12" of corners</td></tr>
+          <tr><td>Perimeter footing</td><td>12" wide × 12" deep thickened edge (frost depth may require deeper)</td></tr>
+        </table>
+      ` : cfg.foundation === 'piers' ? `
+        <table>
+          <tr><th>Item</th><th>Specification</th></tr>
+          <tr><td>Pier layout</td><td>${m.pierCols} columns × ${m.pierRows} rows = ${m.pierCount} piers</td></tr>
+          <tr><td>Pier spacing</td><td>8 ft O.C. maximum (adjust to beam span)</td></tr>
+          <tr><td>Pier diameter</td><td>10"–12" minimum (use tube forms)</td></tr>
+          <tr><td>Pier depth</td><td>Below frost line — min 36" in northern states, 18"–24" southern</td></tr>
+          <tr><td>Concrete per pier</td><td>~1.5–2 cubic feet each (~${Math.ceil(m.pierCount * 0.07)} bags 80lb)</td></tr>
+          <tr><td>Post base hardware</td><td>Simpson Strong-Tie ABA or APBZ adjustable post base per pier</td></tr>
+          <tr><td>Rebar in pier</td><td>(2) #4 rebar full depth, tied to J-bolt or anchor</td></tr>
+        </table>
+      ` : cfg.foundation === 'gravel' ? `
+        <table>
+          <tr><th>Item</th><th>Specification</th></tr>
+          <tr><td>Gravel depth</td><td>4"–6" compacted crushed stone (3/4" clean stone)</td></tr>
+          <tr><td>Area</td><td>${m.sqft + 4} sq ft (2" larger each side)</td></tr>
+          <tr><td>Landscape fabric</td><td>Weed barrier fabric under gravel</td></tr>
+          <tr><td>Skids</td><td>(2) 4×6 PT or 6×6 PT skids, parallel to short axis</td></tr>
+          <tr><td>Gravel tons</td><td>~${Math.ceil(m.sqft * 0.006 * 1.2)} tons (4" depth + waste)</td></tr>
+        </table>
+      ` : cfg.foundation === 'blocks' ? `
+        <table>
+          <tr><th>Item</th><th>Specification</th></tr>
+          <tr><td>Block type</td><td>Concrete deck blocks (solid, min 3,000 psi)</td></tr>
+          <tr><td>Quantity</td><td>${m.pierCount} blocks (${m.pierCols}×${m.pierRows} grid)</td></tr>
+          <tr><td>Spacing</td><td>Max 8 ft O.C. — more for heavier loads</td></tr>
+          <tr><td>Base prep</td><td>Compact and level ground; add 2"–3" gravel bed per block</td></tr>
+          <tr><td>Note</td><td>Deck blocks not suitable for high-wind areas or tall structures</td></tr>
+        </table>
+      ` : `
+        <div class="alert alert-warn">⚠ Skid / no foundation: Structure will not be anchored to ground. Not suitable for high-wind zones or structures requiring a permit.</div>
+        <table>
+          <tr><th>Item</th><th>Specification</th></tr>
+          <tr><td>Skid material</td><td>4×6 PT or 6×6 PT lumber (pressure treated, ground-contact rated)</td></tr>
+          <tr><td>Skid qty</td><td>${Math.ceil(cfg.W / 4)} parallel skids</td></tr>
+          <tr><td>Ground prep</td><td>Level, compact gravel bed — keep wood off direct soil contact</td></tr>
+        </table>
+      `}
+    </div>
+
+    <div class="section-card">
+      <h3>🪵 Wall Framing</h3>
+      <table>
+        <tr><th>Component</th><th>Size</th><th>Spacing</th><th>Notes</th></tr>
+        <tr><td>Bottom plate</td><td>${m.studSize}×${cfg.H <= 9 ? '4' : '6'} PT</td><td>—</td><td>Pressure treated, on sill gasket</td></tr>
+        <tr><td>Wall studs</td><td>${m.studSize}</td><td>${cfg.studSpacing}" O.C.</td><td>Length: ${cfg.H * 12 - 4.5}" (wall ht minus plates)</td></tr>
+        <tr><td>Single top plate</td><td>${m.studSize}</td><td>—</td><td>Lapped at corners</td></tr>
+        <tr><td>Double top plate</td><td>${m.studSize}</td><td>—</td><td>Lapped opposite corners from single</td></tr>
+        <tr><td>Corner assemblies</td><td>${m.studSize}</td><td>—</td><td>3-stud corners for insulation access</td></tr>
+        <tr><td>Door headers</td><td>${m.beamSize}</td><td>—</td><td>Double ${m.beamSize} with 1/2" spacer = ${m.studSize === '2x4' ? '3.5"' : '5.5"'} wall</td></tr>
+        <tr><td>Window headers</td><td>${m.beamSize}</td><td>—</td><td>Size to opening width</td></tr>
+        <tr><td>Jack studs</td><td>${m.studSize}</td><td>—</td><td>Each side of openings</td></tr>
+        <tr><td>King studs</td><td>${m.studSize}</td><td>—</td><td>Full height, beside jack studs</td></tr>
+      </table>
+      <div class="alert alert-info">ℹ Stud length calculation: Wall height ${cfg.H * 12}" − 3 plates (4.5") = ${cfg.H * 12 - 4.5}" stud length</div>
+    </div>
+
+    <div class="section-card">
+      <h3>🔺 Roof Structure — ${cfg.roofStyleName}</h3>
+      ${cfg.roofStyle !== 'open' && cfg.roofStyle !== 'flat' ? `
+        <div class="alert alert-info">📐 Rafter math: Run = ${m.halfSpan}′, Pitch = ${cfg.pitch}:12, Rise = ${m.roofRiseFt}′ | Rafter length = √(${m.halfSpan}² + ${m.roofRiseFt}²) + overhang ≈ ${m.rafterLenFt} ft</div>
+        <table>
+          <tr><th>Component</th><th>Size</th><th>Qty / Spacing</th><th>Notes</th></tr>
+          <tr><td>Common rafters</td><td>${m.rafterSize}</td><td>${m.rafterCount} pcs @ 16" O.C.</td><td>Cut to ${m.rafterLenFt} ft w/ birdsmouth cut</td></tr>
+          <tr><td>Ridge board</td><td>${m.ridgeSize}</td><td>1 pc × ${cfg.L} ft</td><td>Set at peak — ${m.ridgeHeight} ft AFF</td></tr>
+          <tr><td>Collar ties</td><td>1×6 or 2×4</td><td>Every other rafter pair</td><td>Upper third of rafter height</td></tr>
+          <tr><td>Fascia board</td><td>2×6 or 1×6</td><td>${Math.ceil(perimLen(cfg) / 8)} pcs</td><td>Horizontal at rafter tails</td></tr>
+          <tr><td>Soffit</td><td>1/2" plywood or vinyl</td><td>${Math.round(perimLen(cfg) * 1.5)} sq ft</td><td>If using overhang</td></tr>
+          ${cfg.roofStyle === 'hip' ? `<tr><td>Hip rafters</td><td>${m.rafterSize}</td><td>4 hip rafters</td><td>Corner: longer calc — √(run²+run²+rise²)</td></tr>
+          <tr><td>Jack rafters</td><td>${m.rafterSize}</td><td>~${Math.ceil(cfg.W / 1.33)} pcs</td><td>Variable length between hip and ridge</td></tr>` : ''}
+          ${cfg.roofStyle === 'gambrel' ? `<tr><td>Upper rafters</td><td>${m.rafterSize}</td><td>${m.rafterCount} pcs</td><td>Steep upper section (~22° typical)</td></tr>
+          <tr><td>Lower rafters</td><td>${m.rafterSize}</td><td>${m.rafterCount} pcs</td><td>Shallower lower section (~60° typical)</td></tr>
+          <tr><td>Knee wall top plate</td><td>${m.studSize}</td><td>—</td><td>At inflection point of gambrel</td></tr>` : ''}
+        </table>
+      ` : cfg.roofStyle === 'flat' ? `
+        <table>
+          <tr><th>Component</th><th>Size</th><th>Qty / Spacing</th><th>Notes</th></tr>
+          <tr><td>Roof joists</td><td>${m.rafterSize}</td><td>${m.rafterCount} pcs @ 16" O.C.</td><td>Slight slope (1/4": 12) for drainage</td></tr>
+          <tr><td>Rim joist</td><td>${m.rafterSize}</td><td>Perimeter</td><td>Same size as joists</td></tr>
+          <tr><td>Blocking</td><td>${m.rafterSize}</td><td>Mid-span</td><td>Every 8 ft for lateral stability</td></tr>
+        </table>
+      ` : `<div class="alert alert-info">Open structure — no roof framing required.</div>`}
+    </div>
+
+    <div class="section-card">
+      <h3>🔩 Hardware & Fastener Schedule</h3>
+      <table>
+        <tr><th>Application</th><th>Fastener</th><th>Notes</th></tr>
+        <tr><td>Stud to plate (toenail)</td><td>(4) 8d nails or (2) 3" screws</td><td>Each end</td></tr>
+        <tr><td>Plate laps</td><td>(2) 16d nails @ 16" O.C.</td><td>Face nail</td></tr>
+        <tr><td>Rafter to top plate</td><td>Hurricane tie (Simpson H2.5)</td><td>Every rafter — critical in wind zones</td></tr>
+        <tr><td>Rafter to ridge (toenail)</td><td>(3) 10d nails or rafter hanger</td><td>Each side</td></tr>
+        <tr><td>Sheathing to framing</td><td>8d ring shank @ 6" edge, 12" field</td><td>Structural sheathing</td></tr>
+        <tr><td>Post base</td><td>Per Simpson ABA/APBZ spec</td><td>Install before concrete sets</td></tr>
+        <tr><td>Beam to post</td><td>Post cap (Simpson BC or similar)</td><td>Each beam-post connection</td></tr>
+        <tr><td>Joist hanger</td><td>LUS26 or LUS28 per size</td><td>At beam connections</td></tr>
+        <tr><td>Ledger to house</td><td>1/2" lag bolts @ 16" O.C.</td><td>If attaching to house (deck/pergola)</td></tr>
+      </table>
+    </div>
+  `;
+}
+
+function perimLen(cfg) { return 2 * (cfg.W + cfg.L); }
+
+// ============================================================
+// TAB 3: FLOOR PLAN
+// ============================================================
+function renderFloorPlan(cfg, m) {
+  const el = document.getElementById('tab-floorplan-content');
+  el.innerHTML = `
+    <div style="margin-bottom:12px;display:flex;gap:6px;flex-wrap:wrap;">
+      <span class="chip amber">PLAN VIEW</span>
+      <span class="chip cyan">${cfg.W}′ × ${cfg.L}′</span>
+      <span class="chip">${m.sqft} SQ FT</span>
+      <span class="chip">${cfg.roofStyleName.toUpperCase()} ROOF — ${cfg.pitch}:12 PITCH</span>
+    </div>
+  `;
+
+  const canvasWrap = document.createElement('div');
+  canvasWrap.className = 'canvas-wrap';
+  el.appendChild(canvasWrap);
+
+  // Floor plan canvas
+  const SCALE = Math.min(360 / cfg.L, 480 / cfg.W, 28);
+  const PAD = 56;
+  const bw = Math.round(cfg.W * SCALE);
+  const bl = Math.round(cfg.L * SCALE);
+  const cw = bw + PAD * 2;
+  const ch = bl + PAD * 2 + 80;
+
+  const cvs = document.createElement('canvas');
+  cvs.width = cw; cvs.height = ch;
+  cvs.style.maxWidth = '100%';
+  canvasWrap.appendChild(cvs);
+
+  const ctx = cvs.getContext('2d');
+
+  // Background
+  ctx.fillStyle = '#0a1628';
+  ctx.fillRect(0, 0, cw, ch);
+
+  // Grid
+  drawBlueprintGrid(ctx, cw, ch - 70, SCALE);
+
+  const ox = PAD, oy = PAD;
+
+  // Interior fill
+  ctx.fillStyle = 'rgba(246,166,35,0.05)';
+  ctx.fillRect(ox + 3, oy + 3, bw - 6, bl - 6);
+
+  // Stud lines
+  const ss = cfg.studSpacing / 12 * SCALE;
+  ctx.strokeStyle = 'rgba(246,166,35,0.15)';
+  ctx.lineWidth = 0.5;
+  ctx.setLineDash([2, 4]);
+  for (let x = ox + ss; x < ox + bw; x += ss) { ctx.beginPath(); ctx.moveTo(x, oy); ctx.lineTo(x, oy + bl); ctx.stroke(); }
+  ctx.setLineDash([]);
+
+  // Walls
+  ctx.strokeStyle = '#f6a623';
+  ctx.lineWidth = 3.5;
+  ctx.strokeRect(ox, oy, bw, bl);
+
+  // Centerlines (dashed)
+  ctx.strokeStyle = 'rgba(246,166,35,0.2)';
+  ctx.lineWidth = 0.5;
+  ctx.setLineDash([5, 8]);
+  ctx.beginPath();
+  ctx.moveTo(ox + bw / 2, oy); ctx.lineTo(ox + bw / 2, oy + bl);
+  ctx.moveTo(ox, oy + bl / 2); ctx.lineTo(ox + bw, oy + bl / 2);
+  ctx.stroke();
+  ctx.setLineDash([]);
+
+  // Door
+  const doorW = Math.min(SCALE * 3, bw * 0.25);
+  const doorX = ox + bw / 2 - doorW / 2;
+  ctx.fillStyle = '#0a1628';
+  ctx.fillRect(doorX, oy + bl - 3.5, doorW, 7);
+  ctx.strokeStyle = '#f6a623';
+  ctx.lineWidth = 1.5;
+  ctx.beginPath();
+  ctx.arc(doorX + doorW, oy + bl, doorW, Math.PI, Math.PI * 1.5);
+  ctx.stroke();
+  ctx.fillStyle = '#f6a623';
+  ctx.font = `bold ${Math.max(8, Math.min(10, SCALE * 0.4))}px "Share Tech Mono"`;
+  ctx.textAlign = 'center';
+  ctx.fillText('DOOR', doorX + doorW / 2, oy + bl + 18);
+
+  // Window marks on walls
+  if (bl > SCALE * 4) {
+    drawWindowMark(ctx, ox, oy + bl * 0.3, 0, SCALE * 2.5, ox, oy + bl);
+  }
+
+  // Dimension arrows
+  drawDimArrow(ctx, ox, oy + bl + 28, ox + bw, oy + bl + 28, `${cfg.W}′-0"`);
+  drawDimArrow(ctx, ox + bw + 28, oy, ox + bw + 28, oy + bl, `${cfg.L}′-0"`);
+
+  // Pier grid dots (if piers)
+  if (cfg.foundation === 'piers' || cfg.foundation === 'blocks') {
+    const px = cfg.W / (m.pierCols - 1), py = cfg.L / (m.pierRows - 1);
+    ctx.fillStyle = 'rgba(79,195,247,0.6)';
+    for (let r = 0; r < m.pierRows; r++) {
+      for (let c = 0; c < m.pierCols; c++) {
+        ctx.beginPath();
+        ctx.arc(ox + c * px * SCALE, oy + r * py * SCALE, 4, 0, Math.PI * 2);
+        ctx.fill();
+      }
+    }
+    ctx.fillStyle = '#4fc3f7';
+    ctx.font = '9px "Share Tech Mono"';
+    ctx.textAlign = 'center';
+    ctx.fillText(`PIERS (${m.pierCount} total)`, ox + bw / 2, oy + 14);
+  }
+
+  // Compass
+  drawCompass(ctx, 26, 26);
+
+  // Title block
+  drawTitleBlock(ctx, 0, ch - 75, cw, 75, cfg, m);
+
+  // Elevation view
+  const info2 = document.createElement('div');
+  info2.style.cssText = 'margin-top:16px;margin-bottom:8px;display:flex;gap:6px;flex-wrap:wrap;';
+  info2.innerHTML = `<span class="chip amber">FRONT ELEVATION</span><span class="chip cyan">${cfg.W}′ × ${m.roofPeakH}′ peak</span>`;
+  el.appendChild(info2);
+
+  const cw2 = document.createElement('div');
+  cw2.className = 'canvas-wrap';
+  el.appendChild(cw2);
+  drawElevation(cw2, cfg, m);
+}
+
+function drawBlueprintGrid(ctx, w, h, scale) {
+  ctx.strokeStyle = 'rgba(79,195,247,0.08)';
+  ctx.lineWidth = 0.5;
+  for (let x = 0; x < w; x += scale) { ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, h); ctx.stroke(); }
+  for (let y = 0; y < h; y += scale) { ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(w, y); ctx.stroke(); }
+}
+
+function drawWindowMark(ctx, x, y, rotation, size) {
+  ctx.strokeStyle = '#4fc3f7';
+  ctx.lineWidth = 2;
+  ctx.fillStyle = 'rgba(79,195,247,0.2)';
+  ctx.fillRect(x - 2, y, 4, size);
+  ctx.strokeRect(x - 2, y, 4, size);
+  ctx.beginPath(); ctx.moveTo(x - 2, y + size / 2); ctx.lineTo(x + 2, y + size / 2); ctx.stroke();
+}
+
+function drawDimArrow(ctx, x1, y1, x2, y2, label) {
+  ctx.strokeStyle = '#4fc3f7';
+  ctx.lineWidth = 1;
+  ctx.setLineDash([3, 3]);
+  ctx.beginPath(); ctx.moveTo(x1, y1); ctx.lineTo(x2, y2); ctx.stroke();
+  ctx.setLineDash([]);
+  // Ticks
+  const isHoriz = Math.abs(y2 - y1) < 5;
+  [[x1, y1], [x2, y2]].forEach(([px, py]) => {
+    ctx.beginPath();
+    if (isHoriz) { ctx.moveTo(px, py - 5); ctx.lineTo(px, py + 5); }
+    else { ctx.moveTo(px - 5, py); ctx.lineTo(px + 5, py); }
+    ctx.stroke();
+  });
+  ctx.fillStyle = '#4fc3f7';
+  ctx.font = `bold ${Math.min(11, 10)}px "Share Tech Mono"`;
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  if (isHoriz) ctx.fillText(label, (x1 + x2) / 2, y1 - 10);
+  else {
+    ctx.save();
+    ctx.translate(x1 - 12, (y1 + y2) / 2);
+    ctx.rotate(-Math.PI / 2);
+    ctx.fillText(label, 0, 0);
+    ctx.restore();
+  }
+}
+
+function drawCompass(ctx, cx, cy) {
+  ctx.strokeStyle = 'rgba(246,166,35,0.4)';
+  ctx.lineWidth = 0.5;
+  ctx.beginPath(); ctx.arc(cx, cy, 14, 0, Math.PI * 2); ctx.stroke();
+  ctx.strokeStyle = '#f6a623';
+  ctx.lineWidth = 1.5;
+  ctx.beginPath(); ctx.moveTo(cx, cy - 10); ctx.lineTo(cx, cy + 10); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(cx - 10, cy); ctx.lineTo(cx + 10, cy); ctx.stroke();
+  ctx.fillStyle = '#f6a623';
+  ctx.font = 'bold 9px "Share Tech Mono"';
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  ctx.fillText('N', cx, cy - 18);
+}
+
+function drawTitleBlock(ctx, x, y, w, h, cfg, m) {
+  ctx.fillStyle = 'rgba(246,166,35,0.07)';
+  ctx.fillRect(x, y, w, h);
+  ctx.strokeStyle = '#f6a623';
+  ctx.lineWidth = 1;
+  ctx.strokeRect(x, y, w, h);
+  ctx.beginPath(); ctx.moveTo(x, y); ctx.lineTo(x + w, y); ctx.stroke();
+
+  ctx.fillStyle = '#f6a623';
+  ctx.font = `bold ${Math.min(13, w / 28)}px "Bebas Neue", cursive`;
+  ctx.textAlign = 'left';
+  ctx.fillText(`${cfg.typeName.toUpperCase()} — FLOOR PLAN`, x + 10, y + 20);
+
+  ctx.fillStyle = '#4fc3f7';
+  ctx.font = `${Math.min(9, w / 50)}px "Share Tech Mono"`;
+  ctx.fillText(`${cfg.W}′ × ${cfg.L}′  |  ${m.sqft} SQ FT  |  ${cfg.roofStyleName.toUpperCase()} ROOF  |  ${cfg.pitch}:12 PITCH`, x + 10, y + 38);
+  ctx.fillText(`FOUNDATION: ${cfg.foundationName.toUpperCase()}  |  LUMBER: ${cfg.lumberName.toUpperCase()}`, x + 10, y + 52);
+  ctx.fillStyle = '#718096';
+  ctx.fillText(`${cfg.state.toUpperCase()}${cfg.county ? '  —  ' + cfg.county.toUpperCase() : ''}  |  STRUCTUREPRO OFFLINE`, x + 10, y + 66);
+
+  ctx.textAlign = 'right';
+  ctx.fillStyle = '#f6a623';
+  ctx.font = `bold ${Math.min(10, w / 60)}px "Share Tech Mono"`;
+  ctx.fillText(`SCALE 1" = 1'`, x + w - 10, y + 20);
+  ctx.fillStyle = '#718096';
+  ctx.font = `${Math.min(9, w / 70)}px "Share Tech Mono"`;
+  ctx.fillText(new Date().toLocaleDateString(), x + w - 10, y + 36);
+}
+
+function drawElevation(container, cfg, m) {
+  const SCALE = Math.min(320 / cfg.W, 180 / (parseFloat(m.roofPeakH)), 22);
+  const PAD = 44;
+  const bw = Math.round(cfg.W * SCALE);
+  const wallH = Math.round(cfg.H * SCALE);
+  const roofH = Math.round((parseFloat(m.roofPeakH) - cfg.H) * SCALE);
+  const totalH = wallH + roofH;
+  const cw = bw + PAD * 2;
+  const ch = totalH + PAD * 2 + 55;
+
+  const cvs = document.createElement('canvas');
+  cvs.width = cw; cvs.height = ch;
+  cvs.style.maxWidth = '100%';
+  container.appendChild(cvs);
+
+  const ctx = cvs.getContext('2d');
+  ctx.fillStyle = '#0a1628';
+  ctx.fillRect(0, 0, cw, ch);
+  drawBlueprintGrid(ctx, cw, ch - 45, SCALE);
+
+  const ox = PAD, oy = PAD;
+  const baseY = oy + totalH;
+
+  // Ground line
+  ctx.strokeStyle = '#4fc3f7'; ctx.lineWidth = 1.5; ctx.setLineDash([4, 4]);
+  ctx.beginPath(); ctx.moveTo(0, baseY + 4); ctx.lineTo(cw, baseY + 4); ctx.stroke();
+  ctx.setLineDash([]);
+
+  // Walls
+  ctx.fillStyle = 'rgba(246,166,35,0.06)';
+  ctx.fillRect(ox, oy + roofH, bw, wallH);
+  ctx.strokeStyle = '#f6a623'; ctx.lineWidth = 2;
+  ctx.strokeRect(ox, oy + roofH, bw, wallH);
+
+  // Roof
+  const rs = cfg.roofStyle;
+  ctx.fillStyle = 'rgba(246,166,35,0.12)';
+  ctx.strokeStyle = '#f6a623'; ctx.lineWidth = 2.5;
+  ctx.beginPath();
+  if (rs === 'gable' || rs === 'hip') {
+    ctx.moveTo(ox - 8, oy + roofH); ctx.lineTo(ox + bw / 2, oy); ctx.lineTo(ox + bw + 8, oy + roofH);
+  } else if (rs === 'shed') {
+    ctx.moveTo(ox - 8, oy + roofH * 1.25); ctx.lineTo(ox + bw + 8, oy + roofH * 0.1);
+    ctx.lineTo(ox + bw + 8, oy + roofH); ctx.lineTo(ox - 8, oy + roofH);
+  } else if (rs === 'gambrel') {
+    ctx.moveTo(ox - 8, oy + roofH);
+    ctx.lineTo(ox + bw * 0.22, oy + roofH * 0.4);
+    ctx.lineTo(ox + bw / 2, oy);
+    ctx.lineTo(ox + bw * 0.78, oy + roofH * 0.4);
+    ctx.lineTo(ox + bw + 8, oy + roofH);
+  } else if (rs === 'flat') {
+    ctx.moveTo(ox - 6, oy + roofH - 8); ctx.lineTo(ox + bw + 6, oy + roofH - 8);
+    ctx.lineTo(ox + bw + 6, oy + roofH); ctx.lineTo(ox - 6, oy + roofH);
+  }
+  if (rs !== 'open') { ctx.closePath(); ctx.fill(); ctx.stroke(); }
+
+  // Door in elevation
+  const doorW = SCALE * 2.5;
+  const doorH = wallH * 0.72;
+  const doorX = ox + bw / 2 - doorW / 2;
+  ctx.fillStyle = 'rgba(246,166,35,0.18)';
+  ctx.fillRect(doorX, baseY - doorH, doorW, doorH);
+  ctx.strokeStyle = '#f6a623'; ctx.lineWidth = 1.5;
+  ctx.strokeRect(doorX, baseY - doorH, doorW, doorH);
+  ctx.beginPath(); ctx.moveTo(doorX + doorW / 2, baseY - doorH); ctx.lineTo(doorX + doorW / 2, baseY); ctx.stroke();
+
+  // Height dim
+  ctx.strokeStyle = '#4fc3f7'; ctx.lineWidth = 1; ctx.setLineDash([2, 3]);
+  ctx.beginPath(); ctx.moveTo(ox - 20, oy + roofH); ctx.lineTo(ox - 20, baseY); ctx.stroke();
+  ctx.setLineDash([]);
+  ctx.fillStyle = '#4fc3f7';
+  ctx.font = '8px "Share Tech Mono"';
+  ctx.save(); ctx.translate(ox - 26, oy + roofH + wallH / 2); ctx.rotate(-Math.PI / 2);
+  ctx.textAlign = 'center'; ctx.fillText(`${cfg.H}′ WALL`, 0, 0); ctx.restore();
+
+  // Peak dim
+  ctx.strokeStyle = '#4fc3f7'; ctx.lineWidth = 1; ctx.setLineDash([2, 3]);
+  ctx.beginPath(); ctx.moveTo(ox + bw + 20, oy); ctx.lineTo(ox + bw + 20, baseY); ctx.stroke();
+  ctx.setLineDash([]);
+  ctx.save(); ctx.translate(ox + bw + 28, oy + totalH / 2); ctx.rotate(-Math.PI / 2);
+  ctx.textAlign = 'center'; ctx.fillText(`${m.roofPeakH}′ PEAK`, 0, 0); ctx.restore();
+
+  // Width dim
+  drawDimArrow(ctx, ox, baseY + 22, ox + bw, baseY + 22, `${cfg.W}′-0"`);
+
+  // Title
+  ctx.fillStyle = '#f6a623';
+  ctx.font = 'bold 11px "Bebas Neue"';
+  ctx.textAlign = 'center';
+  ctx.fillText(`FRONT ELEVATION — ${cfg.typeName.toUpperCase()}`, cw / 2, ch - 18);
+  ctx.fillStyle = '#4fc3f7';
+  ctx.font = '8px "Share Tech Mono"';
+  ctx.fillText(`${cfg.W}′ W × ${m.roofPeakH}′ H PEAK  |  ${cfg.roofStyleName.toUpperCase()} ROOF  |  ${cfg.pitch}:12 PITCH`, cw / 2, ch - 6);
+}
+
+// ============================================================
+// TAB 4: PERMIT DOCUMENTATION
+// ============================================================
+function renderPermit(cfg, m, codes) {
+  const today = new Date().toLocaleDateString('en-US', {year:'numeric',month:'long',day:'numeric'});
+  const needsPermit = m.sqft > codes.permitThreshold || codes.permitThreshold === 0;
+  const el = document.getElementById('tab-permit-content');
+  el.innerHTML = `
+    <div class="section-card">
+      <h3>📄 Permit Application Package</h3>
+      ${needsPermit ? '<div class="alert alert-warn">⚠ A permit is likely required for this structure. Submit the following to your local building department.</div>' : '<div class="alert alert-ok">✓ Permit may not be required — confirm with local AHJ. Keep this documentation on file regardless.</div>'}
+    </div>
+
+    <div class="section-card">
+      <h3>PROJECT DESCRIPTION</h3>
+      <p style="font-family:'Share Tech Mono',monospace;font-size:11px;line-height:1.8;color:var(--text);">
+        Project: Construction of a new ${cfg.typeName.toLowerCase()} accessory structure<br>
+        Location: [PROPERTY ADDRESS], ${cfg.state}${cfg.county ? ', ' + cfg.county : ''}<br>
+        Owner/Applicant: [OWNER NAME]<br>
+        Contractor: [CONTRACTOR NAME / Owner-Builder]<br>
+        Date: ${today}<br><br>
+        Proposed Work: Construction of a ${cfg.W}-foot × ${cfg.L}-foot (${m.sqft} sq ft) ${cfg.typeName.toLowerCase()} with ${cfg.roofStyleName.toLowerCase()} roof.
+        Wall height: ${cfg.H} feet. Total height at peak: approximately ${m.roofPeakH} feet.
+        Foundation type: ${cfg.foundationName.toLowerCase()}.
+        Primary structural material: ${cfg.lumberName}.
+        Roof pitch: ${cfg.pitch}:12. Roof sheathing: 7/16" OSB or 15/32" plywood.
+        Roofing: [SHINGLES / METAL PANELS / OTHER].<br><br>
+        This structure is intended for [STORAGE / WORKSHOP / VEHICLE / OTHER] use.
+        The structure will [WILL NOT / WILL] be connected to utilities.
+        [IF ELECTRICAL: A separate electrical permit will be obtained prior to installation of electrical service.]
+      </p>
+    </div>
+
+    <div class="section-card">
+      <h3>SCOPE OF WORK</h3>
+      <table>
+        <tr><th>#</th><th>Work Item</th><th>Detail</th></tr>
+        <tr><td>1</td><td>Site preparation</td><td>Clearing, grading, and layout of ${m.sqft + 20} sq ft area</td></tr>
+        <tr><td>2</td><td>Foundation</td><td>${cfg.foundationName} — ${cfg.foundation === 'slab' ? `${m.slabCY} CY concrete, 4" slab with rebar, perimeter footing` : cfg.foundation === 'piers' ? `${m.pierCount} concrete piers, ${m.footingDepth}" depth minimum` : 'Compacted gravel base with PT skids'}</td></tr>
+        <tr><td>3</td><td>Floor framing</td><td>${cfg.type === 'deck' || cfg.foundation !== 'none' ? `${m.rafterSize} floor joists @ 16" O.C.` : 'N/A — slab or ground level'}</td></tr>
+        <tr><td>4</td><td>Wall framing</td><td>${m.studSize} studs @ ${cfg.studSpacing}" O.C., double top plate, PT bottom plate</td></tr>
+        <tr><td>5</td><td>Wall sheathing</td><td>7/16" OSB or 1/2" plywood, ${m.wallSheets} sheets</td></tr>
+        <tr><td>6</td><td>Roof framing</td><td>${cfg.roofStyle !== 'open' ? `${m.rafterSize} rafters @ 16" O.C., ${m.ridgeSize} ridge board, ${cfg.pitch}:12 pitch` : 'Open structure — no roof'}</td></tr>
+        <tr><td>7</td><td>Roof sheathing</td><td>${cfg.roofStyle !== 'open' ? `7/16" OSB, ${m.roofSheets} sheets, #15 felt underlayment` : 'N/A'}</td></tr>
+        <tr><td>8</td><td>Roofing</td><td>${cfg.roofStyle !== 'open' ? `[SHINGLE / METAL] roofing, ${m.roofSquares} roofing squares` : 'N/A'}</td></tr>
+        <tr><td>9</td><td>Exterior finish</td><td>[SIDING / PAINT / OTHER] on all four walls</td></tr>
+        <tr><td>10</td><td>Doors/Windows</td><td>[DESCRIBE OPENINGS]</td></tr>
+      </table>
+    </div>
+
+    <div class="section-card">
+      <h3>STRUCTURAL NOTES FOR DRAWINGS</h3>
+      <p style="font-family:'Share Tech Mono',monospace;font-size:10px;line-height:1.8;color:var(--text-dim);">
+        1. All work shall conform to the ${new Date().getFullYear() <= 2024 ? 'IRC 2021' : 'IRC 2021'} as adopted and amended by ${cfg.state}.<br>
+        2. All lumber shall be No. 2 or better ${cfg.lumberName} unless noted.<br>
+        3. All lumber in contact with concrete or ground shall be pressure treated, Ground Contact rated (UC4A or UC4B).<br>
+        4. Minimum design loads: Dead load 15 psf, Live load 40 psf (floor), Roof live load 20 psf, Ground snow load ${codes.snowLoad} psf.<br>
+        5. Wind design speed: ${codes.windZone} (3-sec gust, Exposure Category C).<br>
+        6. All connections per AWC NDS Supplement Table.<br>
+        7. Hurricane ties (Simpson H2.5 or equal) at every rafter-to-plate connection.<br>
+        8. Anchor bolts: 1/2" × 7" J-bolts @ 6'-0" O.C., max 12" from corners (slab only).<br>
+        9. Contractor to verify all dimensions in field prior to construction.<br>
+        10. Owner/contractor to obtain all required permits prior to construction.
+      </p>
+    </div>
+
+    <div class="section-card">
+      <h3>DRAWINGS TYPICALLY REQUIRED</h3>
+      <table>
+        <tr><th>Drawing</th><th>What to Include</th><th>Scale</th></tr>
+        <tr><td>Site Plan</td><td>Property lines, all structures, setback distances, north arrow, address, lot dimensions</td><td>1"=20' or 1"=30'</td></tr>
+        <tr><td>Floor Plan</td><td>Exterior dimensions, wall layout, door/window locations, interior layout</td><td>1/4"=1' or 1/8"=1'</td></tr>
+        <tr><td>Front Elevation</td><td>Wall height, roof pitch, peak height, door/window sizes</td><td>1/4"=1'</td></tr>
+        <tr><td>Side Elevation</td><td>Side view with all heights, overhangs labeled</td><td>1/4"=1'</td></tr>
+        <tr><td>Foundation Plan</td><td>Footing locations, sizes, depths, anchor bolt pattern</td><td>1/4"=1'</td></tr>
+        <tr><td>Framing Details</td><td>Wall section showing all components, rafter-to-plate detail, post base detail</td><td>1"=1' or 3"=1'</td></tr>
+      </table>
+      <div class="alert alert-info">ℹ The Floor Plan and Elevation views generated by StructurePro can be printed and used as a starting point for your permit drawings. Add site-specific dimensions and your name/address.</div>
+    </div>
+
+    <div class="section-card">
+      <h3>OWNER-BUILDER DECLARATION (if self-contracting)</h3>
+      <p style="font-family:'Share Tech Mono',monospace;font-size:11px;line-height:1.9;color:var(--text);">
+        I, [OWNER NAME], am the owner of the property located at [ADDRESS], ${cfg.state}.
+        I intend to act as my own general contractor for the construction of a ${cfg.typeName.toLowerCase()} on this property.
+        I understand that this exemption does not apply to the hiring of licensed subcontractors for electrical, plumbing, or mechanical work.
+        I understand I must obtain all required inspections and that the work must comply with all applicable codes.
+        I understand that owner-built structures may affect the resale value and insurability of my property.<br><br>
+        Signature: _________________________ &nbsp;&nbsp; Date: _______________<br>
+        Printed Name: _________________________
+      </p>
+    </div>
+
+    <div class="section-card">
+      <h3>INSPECTION CHECKLIST</h3>
+      <table>
+        <tr><th>#</th><th>Inspection</th><th>When to Call</th><th>Status</th></tr>
+        <tr><td>1</td><td>Footing / Foundation</td><td>After forms set, before pour</td><td>☐</td></tr>
+        <tr><td>2</td><td>Slab (if applicable)</td><td>After rebar, before pour</td><td>☐</td></tr>
+        <tr><td>3</td><td>Framing</td><td>After all framing complete, before sheathing</td><td>☐</td></tr>
+        <tr><td>4</td><td>Rough Electrical</td><td>After wiring, before insulation (if applicable)</td><td>☐</td></tr>
+        <tr><td>5</td><td>Insulation</td><td>After insulation, before drywall (if applicable)</td><td>☐</td></tr>
+        <tr><td>6</td><td>Final</td><td>After all work complete</td><td>☐</td></tr>
+      </table>
+    </div>
+  `;
+}
+
+// ============================================================
+// TAB 5: MATERIALS LIST
+// ============================================================
+function renderMaterials(cfg, m, codes) {
+  const el = document.getElementById('tab-materials-content');
+  const studLen = cfg.H * 12 - 4.5; // stud length in inches
+  const studLenStr = `${Math.floor(studLen / 12)}′${Math.round(studLen % 12)}"`;
+
+  // Plates: bottom + double top = 3 per wall
+  const plateSticks = Math.ceil((perimLen(cfg) * 3) / 8) + 4; // 8ft sticks + waste
+
+  // Sheathing
+  const wallSheetsTotal = Math.ceil((perimLen(cfg) * cfg.H * 1.12) / 32);
+
+  // Concrete bags (if slab)
+  const slabBags80lb = cfg.foundation === 'slab' ? Math.ceil(m.slabCY * 40) : 0; // ~40 bags/CY
+
+  // Roofing
+  const roofingQty = cfg.roofStyle !== 'open' ? `${m.roofSquares} squares (${m.roofSquares * 3} bundles)` : 'N/A';
+
+  // Cost
+  const priceNote = 'Prices are rough 2024 estimates. Get local quotes.';
+
+  el.innerHTML = `
+    <div class="section-card">
+      <h3>🪵 Complete Materials List — ${cfg.typeName}</h3>
+      <div class="info-grid">
+        <div class="info-item"><div class="label">Floor Area</div><div class="value big amber">${m.sqft} sq ft</div></div>
+        <div class="info-item"><div class="label">Wall Area</div><div class="value cyan">${m.wallSqft} sq ft</div></div>
+        <div class="info-item"><div class="label">Roof Area</div><div class="value">${m.roofSqft} sq ft</div></div>
+        <div class="info-item"><div class="label">Est. Material Cost</div><div class="value green">$${m.matCostLow.toLocaleString()} – $${m.matCostHigh.toLocaleString()}</div></div>
+      </div>
+      <div class="alert alert-info">ℹ All quantities include 10-15% waste factor. ${priceNote}</div>
+    </div>
+
+    <div class="section-card">
+      <h3>FOUNDATION MATERIALS</h3>
+      <table>
+        <tr><th>Item</th><th>Spec / Size</th><th>Qty</th><th>Unit</th><th>Notes</th></tr>
+        ${cfg.foundation === 'slab' ? `
+          <tr><td class="td-key">Concrete</td><td>3,000–3,500 psi</td><td class="td-num">${m.slabCY}</td><td>CY</td><td>Or ~${slabBags80lb} bags 80lb</td></tr>
+          <tr><td class="td-key">Rebar #3</td><td>3/8" dia</td><td class="td-num">${Math.ceil(m.sqft / 18 * 2 * 3.3 / 20)}</td><td>20-ft sticks</td><td>18" O.C. grid each way</td></tr>
+          <tr><td class="td-key">Wire mesh (alt)</td><td>6×6 W1.4 WWF</td><td class="td-num">${Math.ceil(m.sqft / 150)}</td><td>rolls</td><td>Alternative to rebar grid</td></tr>
+          <tr><td class="td-key">Vapor barrier</td><td>6-mil poly</td><td class="td-num">${Math.ceil(m.sqft * 1.15 / 500)}</td><td>rolls (500 sf)</td><td>Under slab</td></tr>
+          <tr><td class="td-key">Gravel base</td><td>3/4" crushed</td><td class="td-num">${Math.ceil(m.sqft * (4 / 12) / 27 * 1.15)}</td><td>CY</td><td>4" compacted base</td></tr>
+          <tr><td class="td-key">Anchor bolts</td><td>1/2" × 7" J-bolt</td><td class="td-num">${Math.ceil(perimLen(cfg) / 6) + 4}</td><td>each</td><td>6 ft O.C. + corners</td></tr>
+          <tr><td class="td-key">Sill gasket / foam</td><td>3.5" wide</td><td class="td-num">${Math.ceil(perimLen(cfg) / 50)}</td><td>rolls</td><td>Under PT bottom plate</td></tr>
+        ` : cfg.foundation === 'piers' ? `
+          <tr><td class="td-key">Concrete (tube)</td><td>3,000 psi / Quikrete</td><td class="td-num">${Math.ceil(m.pierCount * 1.5)}</td><td>80lb bags</td><td>~1.5 bags per 10" pier, 36" deep</td></tr>
+          <tr><td class="td-key">Tube forms</td><td>10" or 12" dia</td><td class="td-num">${m.pierCount}</td><td>each</td><td>36"+ length</td></tr>
+          <tr><td class="td-key">Post base hardware</td><td>Simpson ABA44 or APBZ</td><td class="td-num">${m.pierCount}</td><td>each</td><td>One per pier</td></tr>
+          <tr><td class="td-key">Rebar #4</td><td>1/2" dia, 30" sticks</td><td class="td-num">${m.pierCount * 2}</td><td>each</td><td>2 per pier</td></tr>
+          <tr><td class="td-key">Gravel (per pier)</td><td>3/4" crushed</td><td class="td-num">${Math.ceil(m.pierCount * 0.5)}</td><td>bags 50lb</td><td>2" base in each hole</td></tr>
+        ` : cfg.foundation === 'gravel' ? `
+          <tr><td class="td-key">Crushed gravel</td><td>3/4" clean stone</td><td class="td-num">${Math.ceil(m.sqft * 0.004 * 1.2)}</td><td>tons</td><td>4" depth over full area</td></tr>
+          <tr><td class="td-key">Landscape fabric</td><td>Heavy duty weed barrier</td><td class="td-num">${Math.ceil(m.sqft * 1.2 / 150)}</td><td>rolls</td><td>Under gravel</td></tr>
+          <tr><td class="td-key">PT skids</td><td>4×6 or 6×6 PT, ${cfg.L} ft</td><td class="td-num">${Math.ceil(cfg.W / 4)}</td><td>each</td><td>Parallel, level on gravel</td></tr>
+        ` : `
+          <tr><td class="td-key">Deck blocks</td><td>Solid concrete</td><td class="td-num">${m.pierCount}</td><td>each</td><td>Level on compacted gravel</td></tr>
+          <tr><td class="td-key">Gravel</td><td>3/4" per block</td><td class="td-num">${Math.ceil(m.pierCount * 2)}</td><td>bags 50lb</td><td>2"–3" under each block</td></tr>
+        `}
+      </table>
+    </div>
+
+    <div class="section-card">
+      <h3>WALL FRAMING LUMBER</h3>
+      <table>
+        <tr><th>Item</th><th>Size</th><th>Length</th><th>Qty</th><th>Notes</th></tr>
+        <tr><td class="td-key">Wall studs</td><td>${m.studSize}</td><td>${Math.ceil(studLen / 12) <= 8 ? '8 ft' : Math.ceil(studLen / 12) <= 10 ? '10 ft' : '12 ft'}</td><td class="td-num">${m.totalStudsWithExtra}</td><td>${cfg.studSpacing}" O.C., ${studLenStr} cut length</td></tr>
+        <tr><td class="td-key">Bottom plate (PT)</td><td>${m.studSize} PT</td><td>8 ft</td><td class="td-num">${Math.ceil(perimLen(cfg) / 8) + 2}</td><td>Pressure treated, 1 plate</td></tr>
+        <tr><td class="td-key">Single top plate</td><td>${m.studSize}</td><td>8 ft</td><td class="td-num">${Math.ceil(perimLen(cfg) / 8) + 2}</td><td>Lapped at corners</td></tr>
+        <tr><td class="td-key">Double top plate</td><td>${m.studSize}</td><td>8 ft</td><td class="td-num">${Math.ceil(perimLen(cfg) / 8) + 2}</td><td>Lapped opposite corners</td></tr>
+        <tr><td class="td-key">Headers (door)</td><td>${m.beamSize}</td><td>4 ft</td><td class="td-num">2</td><td>Double header w/ spacer</td></tr>
+        <tr><td class="td-key">Jack studs</td><td>${m.studSize}</td><td>Door ht + 1.5"</td><td class="td-num">4</td><td>2 per opening side</td></tr>
+        <tr><td class="td-key">King studs</td><td>${m.studSize}</td><td>Full ht</td><td class="td-num">4</td><td>Full height beside jacks</td></tr>
+        <tr><td class="td-key">Cripple studs</td><td>${m.studSize}</td><td>Various</td><td class="td-num">8</td><td>Above openings</td></tr>
+        <tr><td class="td-key">Blocking</td><td>${m.studSize}</td><td>8 ft</td><td class="td-num">${Math.ceil(perimLen(cfg) / 16)}</td><td>Mid-height fire block</td></tr>
+      </table>
+    </div>
+
+    <div class="section-card">
+      <h3>ROOF FRAMING LUMBER</h3>
+      <table>
+        <tr><th>Item</th><th>Size</th><th>Length</th><th>Qty</th><th>Notes</th></tr>
+        ${cfg.roofStyle !== 'open' ? `
+          <tr><td class="td-key">Common rafters</td><td>${m.rafterSize}</td><td>${Math.ceil(parseFloat(m.rafterLenFt) / 2) * 2} ft</td><td class="td-num">${m.rafterCount}</td><td>${m.rafterLenFt} ft cut length w/ birdsmouth</td></tr>
+          <tr><td class="td-key">Ridge board</td><td>${m.ridgeSize}</td><td>${Math.ceil(cfg.L / 12) * 12 + 4} ft</td><td class="td-num">1</td><td>Full length of structure + 2" each end</td></tr>
+          <tr><td class="td-key">Fascia board</td><td>2×6</td><td>Various</td><td class="td-num">${Math.ceil(perimLen(cfg) / 8) + 4}</td><td>All eave sides</td></tr>
+          <tr><td class="td-key">Barge/rake board</td><td>2×6</td><td>${Math.ceil(parseFloat(m.rafterLenFt))} ft</td><td class="td-num">4</td><td>Gable ends (if gable roof)</td></tr>
+          <tr><td class="td-key">Collar ties</td><td>1×6</td><td>${Math.round(cfg.W * 0.6)} ft</td><td class="td-num">${Math.ceil(m.rafterCount / 4)}</td><td>Every other rafter pair, upper 1/3</td></tr>
+          <tr><td class="td-key">Lookouts</td><td>2×4</td><td>2 ft</td><td class="td-num">${Math.ceil(cfg.L / 2) * 2}</td><td>Gable overhang nailers</td></tr>
+          ${cfg.roofStyle === 'hip' ? `<tr><td class="td-key">Hip rafters</td><td>${m.rafterSize}</td><td>${Math.ceil(Math.sqrt(Math.pow(parseFloat(m.rafterLenFt), 2) + Math.pow(cfg.L / 2, 2)))} ft</td><td class="td-num">4</td><td>Corner-to-ridge, 45° plan angle</td></tr>` : ''}
+        ` : `<tr><td colspan="5" style="color:var(--text-dim);text-align:center;">Open structure — no roof framing</td></tr>`}
+      </table>
+    </div>
+
+    <div class="section-card">
+      <h3>SHEATHING & EXTERIOR</h3>
+      <table>
+        <tr><th>Item</th><th>Spec</th><th>Qty</th><th>Unit</th><th>Notes</th></tr>
+        <tr><td class="td-key">Wall sheathing</td><td>7/16" OSB or 1/2" CDX plywood</td><td class="td-num">${wallSheetsTotal}</td><td>4×8 sheets</td><td>Exterior walls</td></tr>
+        ${cfg.roofStyle !== 'open' ? `<tr><td class="td-key">Roof sheathing</td><td>7/16" OSB or 15/32" plywood</td><td class="td-num">${m.roofSheets}</td><td>4×8 sheets</td><td>H-clips at unsupported edges</td></tr>` : ''}
+        <tr><td class="td-key">House wrap</td><td>Tyvek or similar</td><td class="td-num">${Math.ceil(m.wallSqft * 1.1 / 900)}</td><td>rolls (900 sf)</td><td>Over wall sheathing</td></tr>
+        <tr><td class="td-key">Siding</td><td>[T1-11 / Lap / Board & Batten]</td><td class="td-num">${Math.ceil(m.wallSqft * 1.12 / 32)}</td><td>sheets or LF</td><td>Specify per siding type</td></tr>
+        <tr><td class="td-key">Roofing underlayment</td><td>#15 felt or synthetic</td><td class="td-num">${Math.ceil(m.roofSqft * 1.1 / 400)}</td><td>rolls (400 sf)</td><td>Over roof sheathing</td></tr>
+        ${cfg.roofStyle !== 'open' ? `<tr><td class="td-key">Roofing material</td><td>[Shingles / Metal panels]</td><td class="td-num">${roofingQty}</td><td>—</td><td>30-yr arch shingles recommended</td></tr>` : ''}
+        <tr><td class="td-key">Drip edge</td><td>Aluminum or galv.</td><td class="td-num">${Math.ceil(perimLen(cfg) / 10)}</td><td>10-ft sticks</td><td>All roof edges</td></tr>
+        <tr><td class="td-key">Ridge cap</td><td>Match roofing</td><td class="td-num">${Math.ceil(cfg.L / 33)}</td><td>bundles</td><td>Ridge and hips</td></tr>
+      </table>
+    </div>
+
+    <div class="section-card">
+      <h3>HARDWARE & FASTENERS</h3>
+      <table>
+        <tr><th>Item</th><th>Size / Type</th><th>Qty</th><th>Unit</th></tr>
+        <tr><td class="td-key">Framing nails</td><td>16d sinker (3-1/2")</td><td class="td-num">25</td><td>lbs</td></tr>
+        <tr><td class="td-key">Sheathing nails</td><td>8d ring shank (2-3/8")</td><td class="td-num">10</td><td>lbs</td></tr>
+        <tr><td class="td-key">Roofing nails</td><td>1-3/4" galvanized coil</td><td class="td-num">5</td><td>lbs</td></tr>
+        <tr><td class="td-key">Construction screws</td><td>3" GRK or equivalent</td><td class="td-num">5</td><td>lbs</td></tr>
+        <tr><td class="td-key">Hurricane ties</td><td>Simpson H2.5 or H10A</td><td class="td-num">${m.rafterCount * 2}</td><td>each</td></tr>
+        <tr><td class="td-key">Joist hangers</td><td>LUS26 or LUS28</td><td class="td-num">${Math.ceil(perimLen(cfg) / 1.33)}</td><td>each</td></tr>
+        <tr><td class="td-key">Post bases</td><td>Simpson ABA or APBZ</td><td class="td-num">${cfg.foundation === 'piers' || cfg.foundation === 'blocks' ? m.pierCount : 0}</td><td>each</td></tr>
+        <tr><td class="td-key">Post caps</td><td>Simpson BC46 or BC66</td><td class="td-num">${Math.ceil(cfg.W / 8 + 2) * 2}</td><td>each</td></tr>
+        <tr><td class="td-key">Ridge tie</td><td>Simpson LTP4</td><td class="td-num">${Math.ceil(cfg.L / 2)}</td><td>each</td></tr>
+        <tr><td class="td-key">Exterior screws (siding)</td><td>2" deck screws, stainless</td><td class="td-num">3</td><td>lbs</td></tr>
+        <tr><td class="td-key">Roofing staples / nails</td><td>Coil roofing nailer nails</td><td class="td-num">${Math.ceil(m.roofSqft / 100 * 300)}</td><td>ct</td></tr>
+        <tr><td class="td-key">Caulk / flashing</td><td>Exterior grade</td><td class="td-num">4</td><td>tubes</td></tr>
+      </table>
+    </div>
+
+    <div class="section-card">
+      <h3>ESTIMATED COST SUMMARY</h3>
+      <table>
+        <tr><th>Category</th><th>Low Est.</th><th>High Est.</th></tr>
+        <tr><td>Foundation materials</td><td class="td-num">$${Math.round(m.sqft * 1.5).toLocaleString()}</td><td class="td-num">$${Math.round(m.sqft * 4).toLocaleString()}</td></tr>
+        <tr><td>Framing lumber</td><td class="td-num">$${Math.round(m.sqft * 2.5).toLocaleString()}</td><td class="td-num">$${Math.round(m.sqft * 5).toLocaleString()}</td></tr>
+        <tr><td>Sheathing</td><td class="td-num">$${Math.round(m.sqft * 1).toLocaleString()}</td><td class="td-num">$${Math.round(m.sqft * 2).toLocaleString()}</td></tr>
+        <tr><td>Roofing</td><td class="td-num">$${Math.round(m.sqft * 1.5).toLocaleString()}</td><td class="td-num">$${Math.round(m.sqft * 3.5).toLocaleString()}</td></tr>
+        <tr><td>Hardware & fasteners</td><td class="td-num">$${Math.round(m.sqft * 0.5).toLocaleString()}</td><td class="td-num">$${Math.round(m.sqft * 1.5).toLocaleString()}</td></tr>
+        <tr><td>Doors, windows, finish</td><td class="td-num">$${Math.round(m.sqft * 1).toLocaleString()}</td><td class="td-num">$${Math.round(m.sqft * 2).toLocaleString()}</td></tr>
+        <tr style="font-weight:bold;"><td style="color:var(--amber)">TOTAL MATERIALS</td><td class="td-num" style="color:var(--green)">$${m.matCostLow.toLocaleString()}</td><td class="td-num" style="color:var(--amber)">$${m.matCostHigh.toLocaleString()}</td></tr>
+        <tr><td style="color:var(--text-dim)">Labor (if hired)</td><td class="td-num" style="color:var(--text-dim)">$${m.laborCostLow.toLocaleString()}</td><td class="td-num" style="color:var(--text-dim)">$${m.laborCostHigh.toLocaleString()}</td></tr>
+      </table>
+      <div class="alert alert-warn">⚑ Cost estimates are rough regional averages. Get 3 quotes from local suppliers. Lumber prices vary significantly.</div>
+    </div>
+  `;
+}
+
+// ============================================================
+// TAB 6: CUT LIST  (fixed — all variables computed locally)
+// ============================================================
+function renderCutList(cfg, m) {
+  const el = document.getElementById('tab-cutlist-content');
+
+  const studLen    = cfg.H * 12 - 4.5;
+  const studLenFt  = Math.floor(studLen / 12);
+  const studLenIn  = Math.round(studLen % 12);
+  const studLenStr = `${studLenFt}′ ${studLenIn}"`;
+
+  const rafterLenIn    = parseFloat(m.rafterLenFt) * 12;
+  const rafterLenFtPart = Math.floor(rafterLenIn / 12);
+  const rafterLenInPart = Math.round(rafterLenIn % 12);
+
+  const pitchAngle  = Math.round(Math.atan(cfg.pitch / 12) * 180 / Math.PI);
+  const ridgeLenFt  = cfg.L + 2 / 12;
+  const collarTieLen = Math.round(cfg.W * 0.6 * 12);
+  const collarFt    = Math.floor(collarTieLen / 12);
+  const collarIn    = collarTieLen % 12;
+
+  // ---- variables that were previously out-of-scope ----
+  const wallSheetsTotal = Math.ceil((perimLen(cfg) * cfg.H * 1.12) / 32);
+  const plateSticks     = Math.ceil((perimLen(cfg) * 3) / 8) + 4;
+
+  el.innerHTML = `
+    <div class="section-card">
+      <h3>✂️ Lumber Cut List — ${cfg.typeName}</h3>
+      <div class="alert alert-info">📐 Finish-cut lengths shown. Add 1″–2″ for rough cut, then trim to exact. Rafter cut angle: ${pitchAngle}° (${cfg.pitch}:12 pitch).</div>
+      <div class="info-grid">
+        <div class="info-item"><div class="label">Stud Length</div><div class="value big amber">${studLenStr}</div></div>
+        <div class="info-item"><div class="label">Rafter Length</div><div class="value big amber">${rafterLenFtPart}′ ${rafterLenInPart}"</div></div>
+        <div class="info-item"><div class="label">Rafter Angle</div><div class="value cyan">${pitchAngle}°</div></div>
+        <div class="info-item"><div class="label">Ridge Height</div><div class="value cyan">${m.ridgeHeight} ft</div></div>
+      </div>
+    </div>
+
+    <div class="section-card">
+      <h3>RAFTER MATH</h3>
+      <table>
+        <tr><th>Variable</th><th>Value</th><th>Formula</th></tr>
+        <tr><td>Pitch</td><td class="td-num">${cfg.pitch}:12</td><td>As specified</td></tr>
+        <tr><td>Run (half-span)</td><td class="td-num">${m.halfSpan} ft</td><td>Width ÷ 2</td></tr>
+        <tr><td>Rise</td><td class="td-num">${m.roofRiseFt} ft</td><td>Run × (pitch ÷ 12)</td></tr>
+        <tr><td>Rafter line length</td><td class="td-num">${Math.sqrt(m.halfSpan*m.halfSpan + parseFloat(m.roofRiseFt)*parseFloat(m.roofRiseFt)).toFixed(2)} ft</td><td>√(run² + rise²)</td></tr>
+        <tr><td>Overhang added</td><td class="td-num">1.5 ft</td><td>Typical eave</td></tr>
+        <tr><td class="td-key">Total cut length</td><td class="td-num" style="color:var(--amber);font-weight:bold;">${rafterLenFtPart}′ ${rafterLenInPart}"</td><td>Line + overhang</td></tr>
+        <tr><td>Plumb-cut angle</td><td class="td-num">${pitchAngle}°</td><td>arctan(pitch/12)</td></tr>
+        <tr><td>Birdsmouth seat depth</td><td class="td-num">1.5"</td><td>Max ⅓ rafter depth</td></tr>
+        <tr><td>Birdsmouth level cut</td><td class="td-num">${Math.round(1.5 / Math.tan(pitchAngle * Math.PI / 180) * 10) / 10}"</td><td>Seat ÷ tan(angle)</td></tr>
+      </table>
+    </div>
+
+    <div class="section-card">
+      <h3>SECTION 1 — PLATES</h3>
+      <table>
+        <tr><th>Piece</th><th>Stock</th><th>Cut Length</th><th>Qty</th><th>Angle</th><th>Notes</th></tr>
+        <tr><td class="td-key">Bottom plate — short walls (PT)</td><td>${m.studSize} PT</td><td>${cfg.W}′-0"</td><td class="td-num">2</td><td>Square</td><td>PT required; sill gasket under</td></tr>
+        <tr><td class="td-key">Bottom plate — long walls (PT)</td><td>${m.studSize} PT</td><td>${cfg.L}′-0"</td><td class="td-num">2</td><td>Square</td><td>PT required</td></tr>
+        <tr><td class="td-key">Single top plate — short walls</td><td>${m.studSize}</td><td>${cfg.W}′-0"</td><td class="td-num">2</td><td>Square</td><td>Laps long-wall plate at corners</td></tr>
+        <tr><td class="td-key">Single top plate — long walls</td><td>${m.studSize}</td><td>${cfg.L}′-0"</td><td class="td-num">2</td><td>Square</td><td>Runs full length</td></tr>
+        <tr><td class="td-key">Double top plate — short walls</td><td>${m.studSize}</td><td>${(cfg.W - (m.studSize==='2x4'?0.292:0.458)).toFixed(2)}′</td><td class="td-num">2</td><td>Square</td><td>Laps opposite direction from single</td></tr>
+        <tr><td class="td-key">Double top plate — long walls</td><td>${m.studSize}</td><td>${(cfg.L - (m.studSize==='2x4'?0.292:0.458)).toFixed(2)}′</td><td class="td-num">2</td><td>Square</td><td>Laps opposite from single</td></tr>
+      </table>
+    </div>
+
+    <div class="section-card">
+      <h3>SECTION 2 — WALL STUDS</h3>
+      <table>
+        <tr><th>Piece</th><th>Stock</th><th>Cut Length</th><th>Qty</th><th>Angle</th><th>Notes</th></tr>
+        <tr><td class="td-key">Common studs — short walls</td><td>${m.studSize}</td><td>${studLenStr}</td><td class="td-num">${Math.max(0, m.studsW * 2 - 4)}</td><td>Square</td><td>${cfg.studSpacing}" O.C., excl. corners</td></tr>
+        <tr><td class="td-key">Common studs — long walls</td><td>${m.studSize}</td><td>${studLenStr}</td><td class="td-num">${Math.max(0, m.studsL * 2 - 4)}</td><td>Square</td><td>${cfg.studSpacing}" O.C., excl. corners</td></tr>
+        <tr><td class="td-key">Corner studs (3-stud assembly)</td><td>${m.studSize}</td><td>${studLenStr}</td><td class="td-num">12</td><td>Square</td><td>3 per corner × 4 corners</td></tr>
+        <tr><td class="td-key">King studs — door opening</td><td>${m.studSize}</td><td>${studLenStr}</td><td class="td-num">2</td><td>Square</td><td>Full height beside each door</td></tr>
+        <tr><td class="td-key">Jack studs — door opening</td><td>${m.studSize}</td><td>Door ht + 1.5"</td><td class="td-num">2</td><td>Square</td><td>Support header; each side</td></tr>
+        <tr><td class="td-key">Cripple studs above header</td><td>${m.studSize}</td><td>Measure in field</td><td class="td-num">2–4</td><td>Square</td><td>Header to top plate</td></tr>
+        <tr><td class="td-key">Mid-height blocking</td><td>${m.studSize}</td><td>${Math.round(cfg.studSpacing - 3)}"</td><td class="td-num">${Math.ceil(perimLen(cfg) / (cfg.studSpacing / 12))}</td><td>Square</td><td>Fire block at mid-height</td></tr>
+      </table>
+    </div>
+
+    <div class="section-card">
+      <h3>SECTION 3 — HEADERS & BEAMS</h3>
+      <table>
+        <tr><th>Piece</th><th>Stock</th><th>Cut Length</th><th>Qty</th><th>Notes</th></tr>
+        <tr><td class="td-key">Door header (double)</td><td>${m.beamSize}</td><td>3′-3"</td><td class="td-num">2</td><td>Sandwich ½" OSB spacer between pair</td></tr>
+        <tr><td class="td-key">Window header</td><td>${m.beamSize}</td><td>Opening + 3"</td><td class="td-num">2/win</td><td>Same double-header assembly</td></tr>
+        <tr><td class="td-key">Ridge board/beam</td><td>${m.ridgeSize}</td><td>${Math.ceil(ridgeLenFt)}′-0"</td><td class="td-num">1</td><td>Splice if &gt;16 ft; stagger joints</td></tr>
+      </table>
+    </div>
+
+    ${cfg.roofStyle !== 'open' ? `
+    <div class="section-card">
+      <h3>SECTION 4 — ROOF FRAMING</h3>
+      <table>
+        <tr><th>Piece</th><th>Stock</th><th>Cut Length</th><th>Qty</th><th>Cuts</th><th>Notes</th></tr>
+        <tr><td class="td-key">Common rafters</td><td>${m.rafterSize}</td><td>${rafterLenFtPart}′ ${rafterLenInPart}"</td><td class="td-num">${m.rafterCount}</td><td>Plumb ${pitchAngle}° ridge end; birdsmouth at plate</td><td>18" overhang; 1.5" seat cut</td></tr>
+        ${cfg.roofStyle==='hip'?`
+        <tr><td class="td-key">Hip rafters</td><td>${m.rafterSize}</td><td>${Math.ceil(Math.sqrt(Math.pow(parseFloat(m.rafterLenFt),2)+Math.pow(cfg.L/2,2)))}′ est.</td><td class="td-num">4</td><td>45° plan; compound bevel</td><td>Corner to ridge ends</td></tr>
+        <tr><td class="td-key">Jack rafters</td><td>${m.rafterSize}</td><td>Variable</td><td class="td-num">${Math.ceil(cfg.W/1.33)*2}</td><td>Plumb + 45° side cut</td><td>Decrease in equal increments</td></tr>`:''}
+        ${cfg.roofStyle==='gambrel'?`
+        <tr><td class="td-key">Upper rafters (steep)</td><td>${m.rafterSize}</td><td>${Math.ceil(parseFloat(m.rafterLenFt)*0.4)}′ est.</td><td class="td-num">${m.rafterCount}</td><td>${pitchAngle+15}° plumb cut</td><td>Verify with story pole</td></tr>
+        <tr><td class="td-key">Lower rafters (shallow)</td><td>${m.rafterSize}</td><td>${Math.ceil(parseFloat(m.rafterLenFt)*0.75)}′ est.</td><td class="td-num">${m.rafterCount}</td><td>${Math.round(pitchAngle*0.5)}° plumb cut</td><td>Verify in field</td></tr>
+        <tr><td class="td-key">Knee wall top plate</td><td>${m.studSize}</td><td>${cfg.L}′-0"</td><td class="td-num">2</td><td>Square</td><td>At gambrel inflection point</td></tr>`:''}
+        <tr><td class="td-key">Collar ties</td><td>1×6 or 2×4</td><td>${collarFt}′ ${collarIn}"</td><td class="td-num">${Math.ceil(m.rafterCount/4)}</td><td>Square</td><td>Every other pair; upper ⅓ height</td></tr>
+        <tr><td class="td-key">Sub-fascia</td><td>2×4</td><td>${cfg.L}′-0"</td><td class="td-num">4</td><td>Square</td><td>Nailed to rafter tails</td></tr>
+        <tr><td class="td-key">Fascia board</td><td>2×6</td><td>${cfg.L}′-0"</td><td class="td-num">4</td><td>Miter at corners</td><td>Over sub-fascia at eave</td></tr>
+        <tr><td class="td-key">Barge/rake board</td><td>2×6</td><td>${rafterLenFtPart+1}′ est.</td><td class="td-num">4</td><td>Plumb at peak; square at eave</td><td>Gable ends</td></tr>
+      </table>
+    </div>` : ''}
+
+    <div class="section-card">
+      <h3>SECTION 5 — SHEATHING</h3>
+      <table>
+        <tr><th>Sheet</th><th>Size</th><th>Thickness</th><th>Qty</th><th>Cut Notes</th></tr>
+        <tr><td class="td-key">Wall sheathing</td><td>4×8</td><td>7/16" OSB</td><td class="td-num">${wallSheetsTotal}</td><td>Run vertically; cut around openings; stagger seams</td></tr>
+        ${cfg.roofStyle!=='open'?`<tr><td class="td-key">Roof sheathing</td><td>4×8</td><td>7/16" OSB</td><td class="td-num">${m.roofSheets}</td><td>Start at eave; stagger seams; H-clips at unsupported edges</td></tr>`:''}
+      </table>
+    </div>
+
+    <div class="section-card">
+      <h3>MASTER ORDER SUMMARY</h3>
+      <p style="font-family:'Share Tech Mono',monospace;font-size:10px;color:var(--text-dim);margin-bottom:10px;">Order by stock length to minimise waste.</p>
+      <table>
+        <tr><th>Stock Item</th><th>Qty</th><th>Where Used</th></tr>
+        <tr><td class="td-key">${m.studSize} × ${cfg.H<=7?'8':'10'}ft KD</td><td class="td-num">${m.totalStudsWithExtra + plateSticks + Math.ceil(m.rafterCount*0.3)}</td><td>Studs, plates, blocking</td></tr>
+        <tr><td class="td-key">${m.studSize} × ${cfg.H<=7?'8':'10'}ft PT</td><td class="td-num">${Math.ceil(perimLen(cfg)/8)+4}</td><td>Bottom plates (PT required)</td></tr>
+        <tr><td class="td-key">${m.rafterSize} × ${Math.ceil(parseFloat(m.rafterLenFt)/2)*2}ft</td><td class="td-num">${m.rafterCount+4}</td><td>Rafters + extras</td></tr>
+        <tr><td class="td-key">${m.ridgeSize} × ${Math.ceil(cfg.L/8)*8}ft</td><td class="td-num">${Math.ceil(cfg.L/(Math.ceil(cfg.L/8)*8))+1}</td><td>Ridge board/beam</td></tr>
+        <tr><td class="td-key">${m.beamSize} × 8ft</td><td class="td-num">4</td><td>Headers</td></tr>
+        <tr><td class="td-key">2×6 × 10ft</td><td class="td-num">${Math.ceil(perimLen(cfg)/8)+4}</td><td>Fascia, barge boards</td></tr>
+        <tr><td class="td-key">4×8 OSB 7/16" sheets</td><td class="td-num">${wallSheetsTotal+(cfg.roofStyle!=='open'?m.roofSheets:0)}</td><td>Wall + roof sheathing</td></tr>
+        ${cfg.foundation==='piers'||cfg.foundation==='blocks'?`<tr><td class="td-key">${m.postSize} PT × ${cfg.H+2}ft</td><td class="td-num">${m.pierCount}</td><td>Posts (cut to height in field)</td></tr>`:''}
+      </table>
+      <div class="alert alert-warn">⚑ Add 10% to all lumber orders for waste & bad boards. Round up to nearest full unit.</div>
+    </div>
+  `;
+}
+
+// ============================================================
+// TAB 7: BUILD GUIDE  (illustrated with canvas drawings)
+// ============================================================
+function renderBuildGuide(cfg, m) {
+  const el = document.getElementById('tab-build-content');
+  el.innerHTML = '';
+
+  const hasRoof = cfg.roofStyle !== 'open';
+  const hasSlab = cfg.foundation === 'slab';
+  const hasPiers = cfg.foundation === 'piers' || cfg.foundation === 'blocks';
+  const pitchAngle = Math.round(Math.atan(cfg.pitch / 12) * 180 / Math.PI);
+
+  // ---- helper: create a labelled illustration card ----
+  function makeStep(num, title, tips, drawFn) {
+    const card = document.createElement('div');
+    card.className = 'section-card';
+    card.style.marginBottom = '20px';
+
+    // header
+    const hdr = document.createElement('div');
+    hdr.style.cssText = 'display:flex;align-items:center;gap:12px;margin-bottom:12px;';
+    hdr.innerHTML = `
+      <div style="background:var(--amber);color:var(--bg);font-family:'Bebas Neue',cursive;font-size:22px;
+                  width:36px;height:36px;display:flex;align-items:center;justify-content:center;flex-shrink:0;">${num}</div>
+      <h3 style="font-family:'Bebas Neue',cursive;font-size:18px;color:var(--amber);letter-spacing:2px;border:none;margin:0;">${title}</h3>`;
+    card.appendChild(hdr);
+
+    // canvas illustration
+    const wrap = document.createElement('div');
+    wrap.style.cssText = 'background:#0a1628;border:1px solid var(--border);padding:12px;margin-bottom:14px;display:flex;justify-content:center;';
+    const cvs = document.createElement('canvas');
+    cvs.width = 520; cvs.height = 220;
+    cvs.style.cssText = 'max-width:100%;display:block;';
+    wrap.appendChild(cvs);
+    card.appendChild(wrap);
+
+    // draw after DOM insert so canvas is real
+    requestAnimationFrame(() => drawFn(cvs.getContext('2d'), cvs.width, cvs.height));
+
+    // tip bullets
+    const tipDiv = document.createElement('div');
+    tipDiv.style.cssText = 'font-family:"Share Tech Mono",monospace;font-size:11px;line-height:1.9;color:var(--text);';
+    tipDiv.innerHTML = tips.map(t => {
+      const icon = t.startsWith('⚠') ? 'color:var(--amber)' : t.startsWith('✓') ? 'color:var(--green)' : 'color:var(--cyan)';
+      return `<div style="display:flex;gap:8px;margin-bottom:4px;"><span style="${icon};flex-shrink:0;">${t.slice(0,1)}</span><span>${t.slice(1)}</span></div>`;
+    }).join('');
+    card.appendChild(tipDiv);
+
+    el.appendChild(card);
+  }
+
+  // ---- shared canvas helpers ----
+  function bg(ctx, w, h) {
+    ctx.fillStyle = '#0a1628'; ctx.fillRect(0,0,w,h);
+    ctx.strokeStyle='rgba(79,195,247,0.07)'; ctx.lineWidth=0.5;
+    for(let x=0;x<w;x+=20){ctx.beginPath();ctx.moveTo(x,0);ctx.lineTo(x,h);ctx.stroke();}
+    for(let y=0;y<h;y+=20){ctx.beginPath();ctx.moveTo(0,y);ctx.lineTo(w,y);ctx.stroke();}
+  }
+  function label(ctx, txt, x, y, col='#4fc3f7', size=9) {
+    ctx.fillStyle=col; ctx.font=`bold ${size}px "Share Tech Mono",monospace`;
+    ctx.textAlign='center'; ctx.textBaseline='middle'; ctx.fillText(txt,x,y);
+  }
+  function dimLine(ctx, x1,y1,x2,y2,txt,offset=14,col='#4fc3f7') {
+    const dx=x2-x1,dy=y2-y1,len=Math.sqrt(dx*dx+dy*dy);
+    const nx=-dy/len*offset, ny=dx/len*offset;
+    ctx.strokeStyle=col; ctx.lineWidth=1; ctx.setLineDash([3,3]);
+    ctx.beginPath(); ctx.moveTo(x1+nx,y1+ny); ctx.lineTo(x2+nx,y2+ny); ctx.stroke();
+    ctx.setLineDash([]);
+    [[x1,y1],[x2,y2]].forEach(([px,py])=>{
+      ctx.beginPath();
+      ctx.moveTo(px+nx*1.5,py+ny*1.5); ctx.lineTo(px+nx*0.4,py+ny*0.4); ctx.stroke();
+    });
+    label(ctx,txt,(x1+x2)/2+nx*1.8,(y1+y2)/2+ny*1.8,col,8);
+  }
+
+  // ==================================================
+  // STEP 1 — SITE LAYOUT & FOUNDATION
+  // ==================================================
+  makeStep(1, 'Site Layout & Foundation', [
+    '▸ Mark corners with batter boards and mason\u2019s string \u2014 keep strings level.',
+    '▸ Check square: diagonal measurements must be equal (3-4-5 method or measure both diags).',
+    '▸ Excavate to below frost line for footings — check local depth requirement.',
+    '▸ Compact the sub-base; add 4" gravel before pouring.',
+    '⚠ Never pour concrete on frozen or waterlogged ground.',
+    '✓ Pro tip: Set anchor bolts before concrete sets. Use a template to get spacing perfect.',
+  ], (ctx, w, h) => {
+    bg(ctx,w,h);
+    const pad=40, bw=w-pad*2, bh=h-pad*2-20;
+    // ground
+    ctx.fillStyle='rgba(139,90,43,0.3)';
+    ctx.fillRect(0,h-30,w,30);
+    ctx.strokeStyle='#8b5a2b'; ctx.lineWidth=1;
+    ctx.beginPath(); ctx.moveTo(0,h-30); ctx.lineTo(w,h-30); ctx.stroke();
+
+    if(hasSlab) {
+      // slab outline
+      ctx.fillStyle='rgba(200,200,200,0.15)';
+      ctx.fillRect(pad,h-60,bw,30);
+      ctx.strokeStyle='#aaa'; ctx.lineWidth=2;
+      ctx.strokeRect(pad,h-60,bw,30);
+      // rebar grid
+      ctx.strokeStyle='rgba(246,166,35,0.5)'; ctx.lineWidth=1;
+      for(let x=pad+20;x<pad+bw;x+=25){ctx.beginPath();ctx.moveTo(x,h-58);ctx.lineTo(x,h-32);ctx.stroke();}
+      for(let y=h-55;y<h-32;y+=8){ctx.beginPath();ctx.moveTo(pad+2,y);ctx.lineTo(pad+bw-2,y);ctx.stroke();}
+      label(ctx,'4" CONCRETE SLAB',w/2,h-45,'#ccc',10);
+      label(ctx,'REBAR GRID',w/2-60,h-40,'#f6a623',8);
+      // anchor bolt
+      ctx.fillStyle='#f6a623';
+      ctx.beginPath(); ctx.arc(pad+40,h-60,5,0,Math.PI*2); ctx.fill();
+      label(ctx,'ANCHOR\nBOLT',pad+40,h-72,'#f6a623',8);
+      dimLine(ctx,pad,h-62,pad+bw,h-62,`${cfg.W}′`,8);
+    } else if(hasPiers) {
+      // pier grid
+      const cols=Math.min(m.pierCols,5), rows=Math.min(m.pierRows,3);
+      const px=bw/(cols-1||1), py=bh/(rows-1||1);
+      for(let r=0;r<rows;r++) for(let c=0;c<cols;c++){
+        const cx2=pad+c*px, cy2=pad+r*py+20;
+        // pier shaft going into ground
+        ctx.fillStyle='rgba(150,150,150,0.3)';
+        ctx.fillRect(cx2-8,cy2,16,h-30-cy2);
+        ctx.strokeStyle='#aaa'; ctx.lineWidth=1.5;
+        ctx.strokeRect(cx2-8,cy2,16,h-30-cy2);
+        // post base
+        ctx.fillStyle='#f6a623';
+        ctx.fillRect(cx2-10,cy2-4,20,6);
+        ctx.beginPath(); ctx.arc(cx2,cy2-8,5,0,Math.PI*2); ctx.fill();
+      }
+      label(ctx,`${m.pierCount} CONCRETE PIERS`,w/2,h-10,'#4fc3f7',9);
+      dimLine(ctx,pad,pad+22,pad+bw,pad+22,`${cfg.W}′ spacing`,10);
+    } else {
+      // gravel + skids
+      ctx.fillStyle='rgba(180,160,100,0.2)';
+      ctx.fillRect(pad,h-50,bw,20);
+      ctx.strokeStyle='#b4a064'; ctx.lineWidth=1;
+      ctx.strokeRect(pad,h-50,bw,20);
+      const skips=Math.ceil(cfg.W/4);
+      for(let i=0;i<skips;i++){
+        const sx=pad+(i/(skips-1||1))*bw;
+        ctx.fillStyle='#8b5a2b'; ctx.fillRect(sx-6,h-65,12,15);
+        ctx.strokeStyle='#f6a623'; ctx.lineWidth=1; ctx.strokeRect(sx-6,h-65,12,15);
+      }
+      label(ctx,'GRAVEL BASE + PT SKIDS',w/2,h-10,'#4fc3f7',9);
+    }
+
+    // batter boards
+    const bbs=[[pad-25,pad+10],[pad+bw+25,pad+10],[pad-25,pad+bh-10],[pad+bw+25,pad+bh-10]];
+    bbs.forEach(([bx,by])=>{
+      ctx.strokeStyle='#f6a623'; ctx.lineWidth=2;
+      ctx.beginPath(); ctx.moveTo(bx,by-15); ctx.lineTo(bx,by+15); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(bx-12,by-8); ctx.lineTo(bx+12,by-8); ctx.stroke();
+    });
+    // string lines
+    ctx.strokeStyle='rgba(79,195,247,0.6)'; ctx.lineWidth=1; ctx.setLineDash([4,4]);
+    ctx.beginPath(); ctx.moveTo(pad-25,pad+10); ctx.lineTo(pad+bw+25,pad+10); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(pad-25,pad+bh-10); ctx.lineTo(pad+bw+25,pad+bh-10); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(pad+10,pad-15); ctx.lineTo(pad+10,pad+bh+10); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(pad+bw-10,pad-15); ctx.lineTo(pad+bw-10,pad+bh+10); ctx.stroke();
+    ctx.setLineDash([]);
+    // diagonal check
+    ctx.strokeStyle='rgba(246,166,35,0.3)'; ctx.lineWidth=1; ctx.setLineDash([2,5]);
+    ctx.beginPath(); ctx.moveTo(pad+10,pad+10); ctx.lineTo(pad+bw-10,pad+bh-10); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(pad+bw-10,pad+10); ctx.lineTo(pad+10,pad+bh-10); ctx.stroke();
+    ctx.setLineDash([]);
+    label(ctx,'BATTER BOARDS',pad-25,pad-5,'#f6a623',8);
+    label(ctx,'STRING LINES (check square)',w/2,pad-8,'#4fc3f7',8);
+    label(ctx,'DIAGONAL CHECK — must be equal',w/2,pad+bh/2,'rgba(246,166,35,0.6)',8);
+  });
+
+  // ==================================================
+  // STEP 2 — WALL FRAMING
+  // ==================================================
+  makeStep(2, 'Wall Framing', [
+    '▸ Build wall panels flat on the slab or a flat surface — stand up after nailing.',
+    `▸ Stud length = wall height (${cfg.H}′) × 12 − 4.5" (3 plates) = ${Math.round(cfg.H*12-4.5)}"`,
+    '▸ Nail bottom plate to slab anchor bolts or PT skids with structural screws.',
+    '▸ Double top plate laps must offset corners — ties the four walls together.',
+    '▸ Brace walls plumb before standing the next wall. Use temporary diagonal braces.',
+    '⚠ Check for plumb AND square after standing each wall. Fix before moving on.',
+    '✓ Snap a chalk line on the slab/deck for every wall face before you stand anything.',
+  ], (ctx, w, h) => {
+    bg(ctx,w,h);
+    const S=22, pad=30;
+    const wallH=h-80, wallW=w-100;
+    const ox=50, oy=20;
+
+    // ---- draw a single framed wall panel ----
+    // bottom plate
+    ctx.fillStyle='rgba(139,90,43,0.6)';
+    ctx.fillRect(ox,oy+wallH,wallW,S/2);
+    ctx.strokeStyle='#8b5a2b'; ctx.lineWidth=1.5; ctx.strokeRect(ox,oy+wallH,wallW,S/2);
+    label(ctx,'PT BOTTOM PLATE',ox+wallW/2,oy+wallH+S/4,'#8b5a2b',9);
+
+    // top plate (double)
+    ctx.fillStyle='rgba(100,149,237,0.25)';
+    ctx.fillRect(ox,oy,wallW,S);
+    ctx.strokeStyle='#6495ed'; ctx.lineWidth=1.5; ctx.strokeRect(ox,oy,wallW,S);
+    label(ctx,'DOUBLE TOP PLATE',ox+wallW/2,oy+S/2,'#6495ed',9);
+
+    // studs
+    const ssp = cfg.studSpacing/12*S*1.2;
+    const numStuds=Math.floor(wallW/ssp)+1;
+    for(let i=0;i<numStuds;i++){
+      const sx=ox+i*(wallW/(numStuds-1||1));
+      ctx.fillStyle='rgba(246,166,35,0.2)';
+      ctx.fillRect(sx-4,oy+S,8,wallH-S);
+      ctx.strokeStyle=i===0||i===numStuds-1?'#f6a623':'rgba(246,166,35,0.7)';
+      ctx.lineWidth=i===0||i===numStuds-1?2:1;
+      ctx.strokeRect(sx-4,oy+S,8,wallH-S);
+    }
+    label(ctx,`${cfg.studSpacing}" O.C. STUDS`,ox+wallW/2,oy+S+wallH/2,'rgba(246,166,35,0.8)',9);
+
+    // door opening
+    const dox=ox+wallW*0.55, dw=S*2.5, dh=wallH*0.7;
+    ctx.fillStyle='#0a1628';
+    ctx.fillRect(dox,oy+S+wallH-dh-S/2,dw,dh);
+    ctx.strokeStyle='#f6a623'; ctx.lineWidth=1.5;
+    ctx.strokeRect(dox,oy+S+wallH-dh-S/2,dw,dh);
+    // jack studs
+    ctx.strokeStyle='#4fc3f7'; ctx.lineWidth=2;
+    ctx.beginPath();ctx.moveTo(dox,oy+S+wallH-dh-S/2);ctx.lineTo(dox,oy+wallH);ctx.stroke();
+    ctx.beginPath();ctx.moveTo(dox+dw,oy+S+wallH-dh-S/2);ctx.lineTo(dox+dw,oy+wallH);ctx.stroke();
+    // header
+    ctx.fillStyle='rgba(79,195,247,0.3)';
+    ctx.fillRect(dox-6,oy+S+wallH-dh-S/2-S,dw+12,S);
+    ctx.strokeStyle='#4fc3f7'; ctx.strokeRect(dox-6,oy+S+wallH-dh-S/2-S,dw+12,S);
+    label(ctx,'HEADER',dox+dw/2,oy+S+wallH-dh-S,'#4fc3f7',8);
+    label(ctx,'JACK STUD',dox-14,oy+wallH*0.8,'#4fc3f7',8);
+
+    // dimension arrows
+    dimLine(ctx,ox-18,oy+S,ox-18,oy+wallH,`${cfg.H}′ wall`,16);
+    dimLine(ctx,ox,oy+wallH+18,ox+wallW,oy+wallH+18,`${cfg.W}′`,10);
+    label(ctx,'WALL PANEL (lay flat to build, then stand up)',w/2,h-8,'#718096',9);
+  });
+
+  // ==================================================
+  // STEP 3 — SQUARING & BRACING
+  // ==================================================
+  makeStep(3, 'Squaring, Plumbing & Temporary Bracing', [
+    '▸ After standing all 4 walls, re-check diagonal measurements — must be within ¼".',
+    '▸ Use a 4-ft level on the corner studs — plumb in both directions.',
+    '▸ Nail temporary 2×4 diagonal braces from top plate to a stake in the ground.',
+    '▸ Leave braces in place until roof sheathing is nailed — the sheathing locks it square.',
+    '⚠ Do not remove temporary bracing until the structure is fully sheathed.',
+    '✓ Snap chalk lines on the double top plate to mark rafter positions before raising rafters.',
+  ], (ctx, w, h) => {
+    bg(ctx,w,h);
+    const W2=180,H2=130,ox=(w-W2)/2,oy=(h-H2)/2-10;
+    // 3D-ish box outline (simple isometric)
+    const d=35;
+    function pt(x,y){return[ox+x+(y<H2/2?0:0),oy+y];}
+    // front face
+    ctx.strokeStyle='#f6a623'; ctx.lineWidth=2.5;
+    ctx.strokeRect(ox,oy,W2,H2);
+    ctx.fillStyle='rgba(246,166,35,0.05)';
+    ctx.fillRect(ox,oy,W2,H2);
+    // right face
+    ctx.fillStyle='rgba(246,166,35,0.08)';
+    ctx.beginPath();
+    ctx.moveTo(ox+W2,oy); ctx.lineTo(ox+W2+d,oy-d);
+    ctx.lineTo(ox+W2+d,oy-d+H2); ctx.lineTo(ox+W2,oy+H2);
+    ctx.closePath(); ctx.fill(); ctx.stroke();
+    // top face
+    ctx.fillStyle='rgba(79,195,247,0.08)';
+    ctx.beginPath();
+    ctx.moveTo(ox,oy); ctx.lineTo(ox+d,oy-d);
+    ctx.lineTo(ox+W2+d,oy-d); ctx.lineTo(ox+W2,oy);
+    ctx.closePath(); ctx.fill();
+    ctx.strokeStyle='#4fc3f7'; ctx.lineWidth=1.5; ctx.stroke();
+
+    // diagonal braces
+    ctx.strokeStyle='rgba(246,166,35,0.8)'; ctx.lineWidth=2; ctx.setLineDash([5,3]);
+    ctx.beginPath(); ctx.moveTo(ox,oy); ctx.lineTo(ox+W2*0.4,oy+H2+20); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(ox+W2,oy); ctx.lineTo(ox+W2*0.6,oy+H2+20); ctx.stroke();
+    ctx.setLineDash([]);
+
+    // level icon
+    ctx.fillStyle='rgba(79,195,247,0.2)';
+    ctx.fillRect(ox-22,oy+H2/2-8,16,16);
+    ctx.strokeStyle='#4fc3f7'; ctx.lineWidth=1.5; ctx.strokeRect(ox-22,oy+H2/2-8,16,16);
+    label(ctx,'4" LEVEL',ox-14,oy+H2/2+14,'#4fc3f7',8);
+
+    // diagonal check arrows
+    ctx.strokeStyle='rgba(79,195,247,0.5)'; ctx.lineWidth=1; ctx.setLineDash([3,4]);
+    ctx.beginPath(); ctx.moveTo(ox+10,oy+10); ctx.lineTo(ox+W2-10,oy+H2-10); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(ox+W2-10,oy+10); ctx.lineTo(ox+10,oy+H2-10); ctx.stroke();
+    ctx.setLineDash([]);
+
+    label(ctx,'CHECK DIAGONALS EQUAL',ox+W2/2,oy+H2/2,'rgba(79,195,247,0.7)',9);
+    label(ctx,'TEMP BRACE',ox+W2*0.2,oy+H2+32,'#f6a623',9);
+    label(ctx,'TEMP BRACE',ox+W2*0.75,oy+H2+32,'#f6a623',9);
+    label(ctx,'4 WALLS STANDING — CHECK PLUMB ALL CORNERS',w/2,h-8,'#718096',9);
+  });
+
+  // ==================================================
+  // STEP 4 — ROOF FRAMING
+  // ==================================================
+  if(hasRoof) {
+    makeStep(4, `Roof Framing — ${cfg.roofStyleName}`, [
+      `▸ Cut a TEMPLATE rafter first — check fit before cutting all ${m.rafterCount}.`,
+      `▸ Birdsmouth cut: level cut = ${Math.round(1.5/Math.tan(pitchAngle*Math.PI/180)*10)/10}", seat depth = 1.5" max.`,
+      `▸ Set ridge board at ${m.ridgeHeight} ft — support both ends temporarily with posts.`,
+      '▸ Install rafters in pairs from each end toward the center to balance the ridge.',
+      '▸ Install hurricane ties (Simpson H2.5) at every rafter-to-plate connection.',
+      '▸ Add collar ties every other rafter pair in the upper third of height.',
+      '⚠ Do not walk on rafters without sheathing — they can roll. Nail sheathing ASAP.',
+      '✓ Snap layout lines on top plates for rafter locations before lifting anything.',
+    ], (ctx, w, h) => {
+      bg(ctx,w,h);
+      const ox=60,oy=20,bw=w-120,wallH=h-100;
+      const rise=cfg.pitch/12;
+      const peakX=ox+bw/2, peakY=oy+20;
+      const riseH=Math.round(bw/2*rise);
+      const wallTop=peakY+riseH;
+
+      // walls
+      ctx.fillStyle='rgba(246,166,35,0.08)';
+      ctx.fillRect(ox,wallTop,bw,wallH-riseH);
+      ctx.strokeStyle='#f6a623'; ctx.lineWidth=2;
+      ctx.strokeRect(ox,wallTop,bw,wallH-riseH);
+
+      // ridge board
+      ctx.fillStyle='rgba(79,195,247,0.4)';
+      ctx.fillRect(peakX-6,peakY-6,12,12);
+      ctx.strokeStyle='#4fc3f7'; ctx.lineWidth=2; ctx.strokeRect(peakX-6,peakY-6,12,12);
+      label(ctx,'RIDGE',peakX,peakY-16,'#4fc3f7',9);
+
+      // rafters (show several)
+      const numR=Math.min(8,m.rafterCount);
+      for(let i=0;i<numR/2;i++){
+        const t=(i+0.5)/(numR/2);
+        const rx=ox+t*bw/2;
+        const ry=wallTop;
+        const col=i===0?'#f6a623':'rgba(246,166,35,0.6)';
+        ctx.strokeStyle=col; ctx.lineWidth=i===0?2.5:1.5;
+        ctx.beginPath(); ctx.moveTo(rx,ry); ctx.lineTo(peakX,peakY); ctx.stroke();
+        ctx.beginPath(); ctx.moveTo(ox+bw-t*bw/2,ry); ctx.lineTo(peakX,peakY); ctx.stroke();
+
+        if(i===0){
+          // birdsmouth indicator
+          ctx.strokeStyle='#4fc3f7'; ctx.lineWidth=1;
+          ctx.beginPath();
+          ctx.moveTo(rx-6,ry); ctx.lineTo(rx+6,ry);
+          ctx.moveTo(rx,ry); ctx.lineTo(rx,ry+8);
+          ctx.stroke();
+          label(ctx,'BIRDSMOUTH',rx,ry+18,'#4fc3f7',8);
+        }
+      }
+
+      // plumb cut label at peak
+      ctx.fillStyle='rgba(246,166,35,0.2)';
+      ctx.beginPath();
+      ctx.moveTo(peakX,peakY+6);
+      ctx.lineTo(peakX-14,peakY+26); ctx.lineTo(peakX+14,peakY+26);
+      ctx.closePath(); ctx.fill();
+      label(ctx,`${pitchAngle}° PLUMB CUT`,peakX,peakY+36,'#f6a623',8);
+
+      // collar tie
+      const cty=wallTop-(wallTop-peakY)*0.65;
+      ctx.strokeStyle='#66bb6a'; ctx.lineWidth=2;
+      ctx.beginPath();
+      const cl=bw*0.3;
+      ctx.moveTo(peakX-cl/2,cty); ctx.lineTo(peakX+cl/2,cty); ctx.stroke();
+      label(ctx,'COLLAR TIE',peakX,cty-12,'#66bb6a',8);
+
+      // hurricane tie icons
+      [[ox,wallTop],[ox+bw,wallTop]].forEach(([hx,hy])=>{
+        ctx.fillStyle='#ef5350';
+        ctx.fillRect(hx-8,hy-8,16,8);
+        ctx.strokeStyle='#ef5350'; ctx.lineWidth=1; ctx.strokeRect(hx-8,hy-8,16,8);
+      });
+      label(ctx,'HURRICANE TIES',ox-20,wallTop+16,'#ef5350',8);
+
+      dimLine(ctx,ox,wallTop+40,peakX,wallTop+40,`run ${m.halfSpan}′`,10);
+      dimLine(ctx,ox+bw+18,wallTop,ox+bw+18,peakY,`rise ${m.roofRiseFt}′`,16);
+      label(ctx,`${cfg.pitch}:12 PITCH  |  RAFTER CUT LENGTH: ${Math.floor(parseFloat(m.rafterLenFt))}′ ${Math.round((parseFloat(m.rafterLenFt)%1)*12)}"`,w/2,h-8,'#718096',9);
+    });
+  }
+
+  // ==================================================
+  // STEP 5 — SHEATHING
+  // ==================================================
+  makeStep(hasRoof ? 5 : 4, 'Sheathing — Walls & Roof', [
+    '▸ Start wall sheathing from a bottom corner — keep sheets plumb & flush to outside face.',
+    '▸ Stagger vertical seams — never line up on the same stud row after row.',
+    '▸ Leave 1/8" gap at all sheet edges for expansion.',
+    '▸ Nail 8d ring-shank @ 6" along edges, 12" in the field.',
+    '▸ Start roof sheathing at the eave — work up toward the ridge.',
+    '▸ Install H-clips at unsupported edges between rafters.',
+    '▸ Snap chalk lines on sheathing to locate rafters for nailing.',
+    '⚠ Do not leave sheathing unprotected overnight — cover with tarp if rain is expected.',
+    '✓ Wall sheathing IS your bracing — keep it nailed tight. This locks the whole structure.',
+  ], (ctx, w, h) => {
+    bg(ctx,w,h);
+    const ox=40,oy=15,bw=w-80,bh=h-60;
+    const shW=bw/4.5, shH=bh/2;
+
+    // wall with sheathing pattern
+    ctx.fillStyle='rgba(246,166,35,0.05)';
+    ctx.fillRect(ox,oy,bw,bh);
+    ctx.strokeStyle='#f6a623'; ctx.lineWidth=2; ctx.strokeRect(ox,oy,bw,bh);
+
+    // draw sheathing sheets (staggered)
+    const cols=Math.ceil(bw/shW)+1;
+    for(let c=0;c<cols;c++){
+      const sx=ox+c*shW;
+      const offsetY=c%2===0?0:shH/2;
+      for(let r=0;r<3;r++){
+        const sy=oy+r*shH-offsetY;
+        if(sy>oy+bh||sy+shH<oy) continue;
+        const col=c%3===0?'rgba(200,180,100,0.25)':c%3===1?'rgba(180,200,120,0.2)':'rgba(160,200,180,0.2)';
+        ctx.fillStyle=col;
+        const clipX=Math.max(sx,ox), clipY=Math.max(sy,oy);
+        const clipW=Math.min(sx+shW,ox+bw)-clipX;
+        const clipH=Math.min(sy+shH,oy+bh)-clipY;
+        if(clipW>0&&clipH>0) ctx.fillRect(clipX,clipY,clipW,clipH);
+        ctx.strokeStyle='rgba(246,166,35,0.5)'; ctx.lineWidth=1;
+        ctx.strokeRect(clipX,clipY,clipW,clipH);
+      }
+    }
+    // stagger arrow
+    ctx.strokeStyle='#4fc3f7'; ctx.lineWidth=1.5; ctx.setLineDash([4,3]);
+    ctx.beginPath();
+    ctx.moveTo(ox+shW,oy+5); ctx.lineTo(ox+shW,oy+bh-5); ctx.stroke();
+    ctx.beginPath();
+    ctx.moveTo(ox+shW*2,oy+shH/2); ctx.lineTo(ox+shW*2,oy+bh-5); ctx.stroke();
+    ctx.setLineDash([]);
+
+    label(ctx,'STAGGER SEAMS',ox+shW+40,oy+bh/2,'#4fc3f7',9);
+    label(ctx,'4×8 SHEETS — STAGGER EVERY ROW',w/2,h-10,'#718096',9);
+
+    // nail pattern dots
+    for(let nx=ox+6;nx<ox+shW-6;nx+=shW-12){
+      for(let ny=oy+12;ny<oy+bh-6;ny+=12){
+        ctx.fillStyle='#f6a623';
+        ctx.beginPath(); ctx.arc(nx,ny,2,0,Math.PI*2); ctx.fill();
+      }
+    }
+    label(ctx,'NAILS @ 6"\nEDGE / 12" FIELD',ox+shW/2,oy+bh+10,'#f6a623',8);
+
+    // gap indicator
+    ctx.strokeStyle='#ef5350'; ctx.lineWidth=1.5;
+    ctx.beginPath(); ctx.moveTo(ox+shW-1,oy+5); ctx.lineTo(ox+shW+1,oy+5); ctx.stroke();
+    label(ctx,'1/8" GAP',ox+shW,oy-6,'#ef5350',8);
+  });
+
+  // ==================================================
+  // STEP 6 — ROOFING
+  // ==================================================
+  if(hasRoof) {
+    const roofStep = hasSlab || hasPiers ? 6 : 5;
+    makeStep(roofStep, 'Roofing & Weather Barrier', [
+      '▸ Install drip edge on eaves BEFORE underlayment; on rakes AFTER underlayment.',
+      '▸ Roll out synthetic underlayment (#15 felt or better) from eave to ridge — overlap 6".',
+      '▸ In cold climates: install ice-and-water shield at eaves (first 3 ft minimum).',
+      '▸ Start shingles at the eave edge — 1/4" overhang past drip edge.',
+      '▸ Nail every shingle with 4 nails minimum; 6 in high-wind zones.',
+      '▸ Offset shingle joints by at least 6" from row to row — no stacked seams.',
+      '⚠ Never work on a wet roof. Use roof jacks and fall protection.',
+      '✓ Chalk lines every 5" up the roof ensure straight shingle rows.',
+    ], (ctx, w, h) => {
+      bg(ctx,w,h);
+      const ox=50, oy=10, bw=w-100;
+      const rAngle=cfg.pitch/12;
+      const riseH=Math.round(bw/2*rAngle);
+      const wallTop=h-60;
+      const peakY=wallTop-riseH;
+      const peakX=ox+bw/2;
+
+      // roof sheathing
+      ctx.fillStyle='rgba(150,130,80,0.3)';
+      ctx.beginPath();
+      ctx.moveTo(ox-8,wallTop); ctx.lineTo(peakX,peakY-4);
+      ctx.lineTo(ox+bw+8,wallTop); ctx.closePath(); ctx.fill();
+      ctx.strokeStyle='#8b6914'; ctx.lineWidth=2; ctx.stroke();
+
+      // shingle courses (left side)
+      const numCourses=Math.min(8,Math.round(riseH/14));
+      for(let i=0;i<numCourses;i++){
+        const t=(i+0.5)/numCourses;
+        const ly=wallTop-(riseH)*t;
+        const lx=ox+(bw/2)*t;
+        const rowW=(bw/2)*(1-t)*2;
+        const col=i%2===0?'rgba(80,60,40,0.6)':'rgba(60,45,30,0.6)';
+        ctx.fillStyle=col;
+        ctx.fillRect(lx-4,ly-6,rowW+8,10);
+        ctx.strokeStyle='rgba(246,166,35,0.3)'; ctx.lineWidth=0.5;
+        ctx.strokeRect(lx-4,ly-6,rowW+8,10);
+        // offset tabs
+        const tabW=(rowW+8)/5;
+        for(let j=1;j<5;j++){
+          const tx=lx-4+j*tabW+(i%2===0?tabW/2:0);
+          ctx.beginPath(); ctx.moveTo(tx,ly-6); ctx.lineTo(tx,ly+4); ctx.stroke();
+        }
+      }
+
+      // drip edge
+      ctx.strokeStyle='#4fc3f7'; ctx.lineWidth=2.5;
+      ctx.beginPath(); ctx.moveTo(ox-8,wallTop); ctx.lineTo(ox+bw+8,wallTop); ctx.stroke();
+      label(ctx,'DRIP EDGE',ox+bw/2,wallTop+12,'#4fc3f7',9);
+
+      // underlayment arrows
+      ctx.strokeStyle='rgba(79,195,247,0.5)'; ctx.lineWidth=1; ctx.setLineDash([4,3]);
+      for(let i=1;i<4;i++){
+        const t=i/4;
+        const lx=ox+(bw/2)*t-4;
+        const ly=wallTop-riseH*t;
+        const rowW=(bw/2)*(1-t)*2+8;
+        ctx.beginPath(); ctx.moveTo(lx,ly); ctx.lineTo(lx+rowW,ly); ctx.stroke();
+      }
+      ctx.setLineDash([]);
+
+      // ridge cap
+      ctx.fillStyle='rgba(80,60,40,0.9)';
+      ctx.fillRect(peakX-12,peakY-8,24,12);
+      ctx.strokeStyle='#f6a623'; ctx.lineWidth=1.5; ctx.strokeRect(peakX-12,peakY-8,24,12);
+      label(ctx,'RIDGE CAP',peakX,peakY-16,'#f6a623',9);
+
+      // chalk line
+      ctx.strokeStyle='rgba(79,195,247,0.4)'; ctx.lineWidth=1; ctx.setLineDash([2,4]);
+      const clt=0.4;
+      ctx.beginPath();
+      ctx.moveTo(ox+(bw/2)*clt-4, wallTop-riseH*clt-8);
+      ctx.lineTo(ox+bw-(bw/2)*clt+4, wallTop-riseH*clt-8);
+      ctx.stroke(); ctx.setLineDash([]);
+      label(ctx,'CHALK LINE',ox+bw*0.75,wallTop-riseH*clt-18,'#4fc3f7',8);
+
+      label(ctx,`${cfg.roofStyleName.toUpperCase()} ROOF — ${cfg.pitch}:12 PITCH  |  ${m.roofSquares} SQUARES NEEDED`,w/2,h-6,'#718096',9);
+    });
+  }
+
+  // ==================================================
+  // STEP 7 — EXTERIOR FINISH
+  // ==================================================
+  const finishStep = hasRoof ? (hasSlab||hasPiers?7:6) : (hasSlab||hasPiers?5:4);
+  makeStep(finishStep, 'Siding, Doors & Exterior Finish', [
+    '▸ Install house wrap (Tyvek or similar) over wall sheathing before siding.',
+    '▸ Tape all seams and around window/door rough openings.',
+    '▸ Install window and door flashing tape — bottom first, sides, then top (shingled).',
+    '▸ T1-11 siding: grooves vertical, 1/8" gap at joints, caulk all edges.',
+    '▸ Lap siding: start at bottom, overlap each course minimum 1.5".',
+    '▸ Paint or stain all cut ends of siding before installation.',
+    '⚠ Do not let siding contact the ground — minimum 6" clearance.',
+    '✓ Caulk all penetrations, corners, and trim joints with paintable exterior caulk.',
+  ], (ctx, w, h) => {
+    bg(ctx,w,h);
+    const ox=50,oy=20,bw=w-100,bh=h-70;
+
+    // wall base
+    ctx.fillStyle='rgba(246,166,35,0.05)';
+    ctx.fillRect(ox,oy,bw,bh);
+    ctx.strokeStyle='#f6a623'; ctx.lineWidth=2; ctx.strokeRect(ox,oy,bw,bh);
+
+    // house wrap
+    ctx.fillStyle='rgba(79,195,247,0.08)';
+    ctx.fillRect(ox+3,oy+3,bw-6,bh-6);
+    label(ctx,'HOUSE WRAP',ox+30,oy+16,'rgba(79,195,247,0.7)',8);
+
+    // siding courses
+    const courseH=14;
+    for(let sy=oy+bh-courseH;sy>oy;sy-=courseH-2){
+      ctx.fillStyle='rgba(139,90,43,0.35)';
+      ctx.fillRect(ox+3,sy,bw-6,courseH-2);
+      ctx.strokeStyle='rgba(139,90,43,0.7)'; ctx.lineWidth=1;
+      ctx.strokeRect(ox+3,sy,bw-6,courseH-2);
+    }
+    label(ctx,'LAP SIDING (start at bottom)',ox+bw/2,oy+bh-8,'#8b5a2b',8);
+
+    // door frame
+    const dx=ox+bw*0.5, dw=50, dh=bh*0.6;
+    ctx.fillStyle='#0a1628';
+    ctx.fillRect(dx,oy+bh-dh,dw,dh);
+    ctx.strokeStyle='#f6a623'; ctx.lineWidth=2;
+    ctx.strokeRect(dx,oy+bh-dh,dw,dh);
+    // door hardware
+    ctx.fillStyle='#f6a623';
+    ctx.beginPath(); ctx.arc(dx+dw-8,oy+bh-dh/2,4,0,Math.PI*2); ctx.fill();
+    label(ctx,'DOOR',dx+dw/2,oy+bh-dh/2,'#f6a623',9);
+
+    // flashing tape around door
+    ctx.strokeStyle='rgba(79,195,247,0.8)'; ctx.lineWidth=3; ctx.setLineDash([0]);
+    ctx.beginPath();
+    ctx.moveTo(dx-4,oy+bh-dh); ctx.lineTo(dx-4,oy+bh);
+    ctx.moveTo(dx+dw+4,oy+bh-dh); ctx.lineTo(dx+dw+4,oy+bh);
+    ctx.moveTo(dx-8,oy+bh-dh-4); ctx.lineTo(dx+dw+8,oy+bh-dh-4);
+    ctx.stroke();
+    label(ctx,'FLASHING TAPE',dx+dw+28,oy+bh-dh,'#4fc3f7',8);
+
+    // 6" clearance
+    ctx.strokeStyle='#ef5350'; ctx.lineWidth=1; ctx.setLineDash([3,3]);
+    ctx.beginPath(); ctx.moveTo(ox,oy+bh+8); ctx.lineTo(ox+bw,oy+bh+8); ctx.stroke();
+    ctx.setLineDash([]);
+    ctx.fillStyle='rgba(139,90,43,0.3)';
+    ctx.fillRect(ox,oy+bh+8,bw,20);
+    label(ctx,'MIN 6" CLEARANCE FROM GRADE',ox+bw/2,oy+bh+18,'#ef5350',9);
+    label(ctx,'EXTERIOR FINISH — WORK TOP TO BOTTOM',w/2,h-6,'#718096',9);
+  });
+
+  // ==================================================
+  // FINAL TIPS CARD
+  // ==================================================
+  const tipCard = document.createElement('div');
+  tipCard.className = 'section-card';
+  tipCard.innerHTML = `
+    <h3>🏁 Final Checklist Before You're Done</h3>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-top:10px;">
+      <div>
+        <div class="section-card" style="margin-bottom:0;background:var(--bg);">
+          <h4 style="color:var(--green);font-family:'Share Tech Mono',monospace;font-size:11px;letter-spacing:1px;margin-bottom:8px;">✓ STRUCTURAL</h4>
+          ${['All anchor bolts tight','Hurricane ties on every rafter','Double top plate lapped at corners','All sheathing nailed to schedule','Ridge board fully supported','No missing blocking'].map(i=>`<div style="font-family:'Share Tech Mono',monospace;font-size:10px;color:var(--text);margin:4px 0;display:flex;gap:8px;"><span style="color:var(--text-muted)">☐</span>${i}</div>`).join('')}
+        </div>
+      </div>
+      <div>
+        <div class="section-card" style="margin-bottom:0;background:var(--bg);">
+          <h4 style="color:var(--cyan);font-family:'Share Tech Mono',monospace;font-size:11px;letter-spacing:1px;margin-bottom:8px;">✓ WEATHERTIGHT</h4>
+          ${['Drip edge installed correctly','All underlayment overlapped 6"','Roofing nailed per schedule','Flashing at all openings','House wrap taped at seams','All exterior caulked','Doors & windows sealed'].map(i=>`<div style="font-family:'Share Tech Mono',monospace;font-size:10px;color:var(--text);margin:4px 0;display:flex;gap:8px;"><span style="color:var(--text-muted)">☐</span>${i}</div>`).join('')}
+        </div>
+      </div>
+    </div>
+    <div class="alert alert-warn" style="margin-top:14px;">⚑ Schedule all required inspections BEFORE finishing work that covers structural elements. Never cover what an inspector needs to see.</div>
+    <div class="alert alert-info">ℹ This guide is for educational purposes. Always follow your local building code and manufacturer installation instructions. When in doubt, consult a licensed contractor or structural engineer.</div>
+  `;
+  el.appendChild(tipCard);
+}
+</script>
+</body>
+</html>
