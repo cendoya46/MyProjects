@@ -1,0 +1,742 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>EMT Skills Trainer</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700&family=Barlow:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+/* VOICE: calm, clinical coach — direct, encouraging, never cute
+   IDEA: the laminated NREMT skill check sheet on an examiner's clipboard
+   PICTURE: the live question card itself, checklist rows ticking off as she goes
+   COLOUR and TYPE: white sheet, ink black, rescue red header band; Barlow Condensed like rig lettering + Barlow
+   LAYOUT: one calm column, max 760px; red band header; stacks naturally on phone */
+:root{color-scheme:light dark;
+--bg:light-dark(#f3f2ee,#121314);--sheet:light-dark(#ffffff,#1c1d1f);--ink:light-dark(#141518,#ecebe7);
+--mute:light-dark(#5d6168,#a3a6ab);--line:light-dark(#dcdad3,#33353a);--red:#c8102e;--redink:light-dark(#a30d25,#ff6b7d);
+--ok:light-dark(#17683f,#5fd39a);--okbg:light-dark(#e6f4ec,#173326);--bad:light-dark(#a30d25,#ff8a98);--badbg:light-dark(#fbe9ec,#3a1a20);
+--note:light-dark(#fff6d6,#3a3215);--noteink:light-dark(#5b4700,#f3dc8a)}
+:root[data-theme=light]{color-scheme:light}:root[data-theme=dark]{color-scheme:dark}
+*{box-sizing:border-box;min-width:0}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.55 Barlow,"Segoe UI",system-ui,sans-serif;overflow-x:clip}
+h1,h2,h3,.cond{font-family:"Barlow Condensed","Arial Narrow",sans-serif;font-weight:700;line-height:1.05;text-wrap:balance;margin:0}
+header{background:var(--red);color:#fff;padding:18px max(5vw,16px) 16px;position:relative;overflow:hidden}
+header .in{position:relative;z-index:1;max-width:760px;margin:0 auto;display:flex;align-items:center;gap:14px}
+header h1{font-size:clamp(26px,5vw,36px);letter-spacing:.01em}
+header p{margin:2px 0 0;opacity:.9;font-size:14px}
+header svg.ecg{pointer-events:none;position:absolute;right:-10px;bottom:0;width:340px;height:60px;opacity:.28}
+.home-btn{background:rgba(255,255,255,.16);border:0;color:#fff;border-radius:10px;min-width:44px;height:44px;font:600 15px Barlow,sans-serif;padding:0 12px;cursor:pointer;flex:none}
+.home-btn:focus-visible,button:focus-visible,input:focus-visible{outline:3px solid #2b7fff;outline-offset:2px}
+main{max-width:760px;margin:0 auto;padding:20px max(4vw,14px) 60px}
+.card{background:var(--sheet);border:1px solid var(--line);border-radius:14px;padding:18px;margin-bottom:14px}
+.row{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+.btn{font:600 16px Barlow,sans-serif;min-height:46px;padding:10px 16px;border-radius:10px;border:1.5px solid var(--ink);background:var(--sheet);color:var(--ink);cursor:pointer}
+.btn.pri{background:var(--ink);color:var(--sheet)}
+.btn.red{background:var(--red);border-color:var(--red);color:#fff}
+.btn:disabled{opacity:.45;cursor:default}
+.muted{color:var(--mute)}.small{font-size:14px}
+h2{font-size:32px;margin-bottom:6px;overflow-wrap:anywhere}h3{font-size:22px;margin:4px 0 8px}
+.stations{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,330px),1fr));gap:10px}
+.st{display:block;text-align:left;width:100%;background:var(--sheet);border:1px solid var(--line);border-radius:12px;padding:14px 14px 12px;cursor:pointer;color:var(--ink);font:inherit}
+.st:hover{border-color:var(--ink)}
+.st b{font:700 20px/1.1 "Barlow Condensed","Arial Narrow",sans-serif;display:block}
+.meter{height:6px;background:var(--line);border-radius:4px;margin-top:10px;overflow:hidden}.meter i{display:block;height:100%;background:var(--ok)}
+.chip{display:inline-block;font:600 13px Barlow,sans-serif;padding:3px 9px;border-radius:20px;background:var(--line);color:var(--ink)}
+.chip.red{background:var(--red);color:#fff}
+.q{font-size:20px;font-weight:600;line-height:1.35;margin:10px 0 14px}
+.opts{display:grid;gap:8px}
+.opt{display:flex;gap:12px;align-items:flex-start;text-align:left;width:100%;font:500 16px/1.4 Barlow,sans-serif;padding:12px 14px;min-height:50px;border-radius:10px;border:1.5px solid var(--line);background:var(--sheet);color:var(--ink);cursor:pointer}
+.opt:hover:not(:disabled){border-color:var(--ink)}
+.opt .k{flex:none;width:24px;height:24px;border-radius:6px;border:1.5px solid var(--line);display:grid;place-items:center;font-size:13px;font-weight:700}
+.opt.ok{border-color:var(--ok);background:var(--okbg)}.opt.ok .k{background:var(--ok);border-color:var(--ok);color:var(--sheet)}
+.opt.bad{border-color:var(--bad);background:var(--badbg)}.opt.bad .k{background:var(--bad);border-color:var(--bad);color:var(--sheet)}
+.opt:disabled{cursor:default}
+.fb{margin-top:14px;padding:14px;border-radius:10px;border-left:5px solid}
+.fb.ok{background:var(--okbg);border-color:var(--ok)}.fb.bad{background:var(--badbg);border-color:var(--bad)}
+.fb strong{display:block;font:700 20px "Barlow Condensed","Arial Narrow",sans-serif;margin-bottom:2px}
+.prog{height:6px;background:var(--line);border-radius:4px;overflow:hidden;margin:8px 0 2px}.prog i{display:block;height:100%;background:var(--red);transition:width .3s}
+.note{background:var(--note);color:var(--noteink);border-radius:10px;padding:10px 14px;margin:10px 0;font-weight:500}
+.note::before{content:"Examiner: ";font-weight:700}
+ol.sheet{margin:0;padding:0;list-style:none;counter-reset:s}
+ol.sheet li{counter-increment:s;display:flex;gap:10px;padding:8px 0;border-bottom:1px solid var(--line)}
+ol.sheet li::before{content:counter(s);flex:none;width:26px;height:26px;border-radius:50%;background:var(--line);display:grid;place-items:center;font-size:13px;font-weight:700}
+ol.sheet li.done::before{content:"✓";background:var(--ok);color:var(--sheet)}
+ol.sheet li .note{margin:6px 0 0}
+.tip{background:var(--bg);border-left:4px solid var(--red);border-radius:6px;padding:8px 12px;margin-top:6px;font-size:14px}.pt{flex:none;font-size:13px;font-weight:600;color:var(--mute);white-space:nowrap}
+.critflag{margin-top:8px;font-weight:700;color:var(--bad)}ul.hx{margin:0;padding-left:18px}ul.hx li{margin:3px 0}
+ul.crit{margin:0;padding-left:20px}ul.crit li{margin:4px 0}
+.seqpool,.seqpick{display:grid;gap:8px}
+.seqpick{min-height:60px;border:2px dashed var(--line);border-radius:10px;padding:8px;margin-bottom:12px}
+.seqpick .opt .k{background:var(--ink);color:var(--sheet);border-color:var(--ink)}
+.timer{font:700 28px "Barlow Condensed","Arial Narrow",sans-serif;font-variant-numeric:tabular-nums}
+.timer.over{color:var(--redink)}
+.big{font:700 clamp(56px,14vw,84px)/1 "Barlow Condensed","Arial Narrow",sans-serif}
+input.name{font:16px Barlow,sans-serif;padding:10px 12px;border-radius:10px;border:1.5px solid var(--line);background:var(--sheet);color:var(--ink);min-height:46px;flex:1;min-width:160px}
+.miss{border-top:1px solid var(--line);padding:10px 0}
+.miss:first-child{border-top:0}
+details summary{cursor:pointer;font-weight:600;min-height:32px}
+.stats{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;text-align:center}
+.stats div{background:var(--bg);border-radius:10px;padding:10px 4px}
+.stats b{display:block;font:700 28px "Barlow Condensed","Arial Narrow",sans-serif}
+@media(prefers-reduced-motion:reduce){.prog i{transition:none}}
+@media(max-width:600px){.home-btn:not([hidden])+div p{display:none}h2{font-size:28px}.q{font-size:18px}.card{padding:14px}}
+</style>
+</head>
+<body>
+<header><div class="in"><button class="home-btn" id="homeBtn" aria-label="Home" hidden>← Home</button><div><h1>EMT Skills Trainer</h1><p>NREMT EMT psychomotor exam practice</p></div></div>
+<svg class="ecg" viewBox="0 0 340 60" preserveAspectRatio="none" aria-hidden="true"><polyline fill="none" stroke="#fff" stroke-width="3" points="0,40 60,40 72,40 80,30 88,40 110,40 118,50 128,4 138,56 146,40 175,40 186,32 198,40 250,40 258,50 268,4 278,56 286,40 340,40"/></svg>
+</header>
+<main id="app"></main>
+<script>
+{
+/* ---------- CONTENT ----------
+   Paraphrased from the 2011 NREMT EMT psychomotor sheets and 2011 Users Guide (spinal stations: NREMT sheets).
+   facts: [question, correct, wrong, wrong, wrong, why]
+   crit:  [scenario, isCriticalFail, why] */
+const S=[
+{id:"trauma",name:"Patient Assessment/Management – Trauma",short:"Trauma Assessment",min:10,pts:42,hers:true,
+steps:["Takes or verbalizes appropriate body substance isolation (BSI) precautions","Determines the scene/situation is safe","Determines the mechanism of injury/nature of illness","Determines the number of patients","Requests additional EMS assistance if necessary","Considers stabilization of the spine","Verbalizes general impression of the patient","Determines responsiveness / level of consciousness","Determines chief complaint / apparent life-threats","Airway: opens and assesses airway; inserts adjunct as indicated","Breathing: assesses breathing and assures adequate ventilation","Breathing: initiates appropriate oxygen therapy","Breathing: manages any injury that may compromise breathing/ventilation","Circulation: checks pulse","Circulation: assesses skin (color, temperature or condition)","Circulation: assesses for and controls major bleeding if present","Circulation: initiates shock management (positions patient properly, conserves body heat)","Identifies patient priority and makes treatment/transport decision (based on calculated GCS)","History taking: attempts to obtain a SAMPLE history","Head: inspects mouth, nose and face; inspects/palpates scalp and ears; assesses eyes","Neck: checks trachea position, checks jugular veins, palpates cervical spine","Chest: inspects, palpates and auscultates the chest","Abdomen/pelvis: inspects/palpates abdomen, assesses pelvis, verbalizes genitalia/perineum as needed","Lower extremities: inspects, palpates, assesses motor, sensory and circulation (each leg)","Upper extremities: inspects, palpates, assesses motor, sensory and circulation (each arm)","Posterior thorax, lumbar and buttocks: inspects and palpates","Vital signs: obtains baseline vital signs (must include BP, pulse, respirations)","Manages secondary injuries and wounds appropriately","Reassessment: demonstrates how and when to reassess the patient"],
+sp:[1,1,1,1,1,1,1,1,1,2,2,1,1,1,1,1,1,1,1,3,3,3,3,2,2,2,1,1,1],
+notes:{},
+tips:{5:"Her instructor's note on this line: assign roles (e.g. tell your partner to hold manual stabilization of the head).",19:"Items marked ** on the sheet (mouth, nose, eyes, neck, chest, abdomen/pelvis, legs, back) may be checked during the primary survey instead."},
+critical:["Failure to initiate or call for transport within the 10-minute time limit","Failure to take or verbalize BSI precautions","Failure to determine scene safety","Failure to assess for and provide spinal protection when indicated","Failure to voice and ultimately provide high-concentration oxygen","Failure to assess/provide adequate ventilation","Failure to find or appropriately manage problems with airway, breathing, hemorrhage or shock","Failure to differentiate the patient's need for immediate transport vs. continued assessment on scene","Doing the secondary assessment before assessing/treating threats to airway, breathing and circulation","Orders a dangerous or inappropriate intervention","Failure to manage the patient as a competent EMT","Exhibits unacceptable affect with patient or other personnel"],
+facts:[
+["What is the time limit to initiate or call for transport in the Trauma station?","10 minutes","5 minutes","15 minutes","20 minutes","Trauma is 10 minutes; Medical is 15. Calling for transport late is a critical fail."],
+["What should ALWAYS be the first thing you say or do in a station?","Take or verbalize BSI (body substance isolation) precautions","Check responsiveness","Ask about the mechanism of injury","Open the airway","Every NREMT sheet starts with BSI precautions (her sheets say BSI; newer ones say PPE). Forgetting it is a critical fail in most stations — say it out loud the moment you start."],
+["When are baseline vital signs taken on her (2011) Trauma sheet?","After the secondary assessment, before managing secondary injuries","Before the primary survey","Right after scene safety","Only during reassessment","On the 2011 sheet the Vital Signs section (BP, pulse, respirations) comes after the head-to-toe secondary assessment."],
+["What does ** next to an item on the Trauma sheet mean?","It may be done during the primary survey instead of in order","It is worth double points","It is optional","It is a critical criterion","The sheet notes that ** areas may be integrated within the primary survey/resuscitation sequence."],
+["Your trauma patient has a sucking chest wound. When do you seal it?","During the primary survey, under Breathing","During the secondary assessment of the chest","After baseline vitals","During reassessment","Anything that compromises breathing gets managed in the primary survey. Waiting until the secondary assessment is a critical fail."],
+["What oxygen should the trauma patient get in the primary survey?","High-concentration O2 (non-rebreather around 15 L/min)","Nasal cannula at 2 L/min","No oxygen unless SpO2 is low","Blow-by oxygen","Failure to voice AND provide high-concentration oxygen is listed as critical criteria on the trauma sheet."],
+["After the primary survey, what decision must you clearly state before history and the secondary assessment?","Patient priority and the treatment/transport decision","The patient's blood type","Whether to call law enforcement","Which hospital has the best food","You identify priority (based on calculated GCS) and decide immediate transport vs. continued scene care. Failing to differentiate this is a critical fail."],
+["What is the order of the secondary assessment on the Trauma sheet?","Head → neck → chest → abdomen/pelvis → legs → arms → back","Chest → head → arms → legs → back","Legs → arms → chest → head","Back → head → chest → abdomen","Head to toe: head, neck, chest, abdomen/pelvis, lower extremities, upper extremities, then posterior thorax/lumbar/buttocks."],
+["What is the highest possible GCS score?","15","10","12","20","Eyes 4 + Verbal 5 + Motor 6 = 15. Lowest possible is 3."],
+["What does SAMPLE stand for?","Signs/symptoms, Allergies, Medications, Past history, Last oral intake, Events","Scene, Airway, Mechanism, Pulse, Lungs, Extremities","Safety, Assessment, Monitoring, Pulse, Lungs, Exam","Symptoms, Age, Meds, Pain, Lungs, ECG","On her sheet, SAMPLE history comes right after the transport decision, before the secondary assessment."],
+["On her Trauma sheet, what is the first item listed under Circulation?","Check pulse","Take a blood pressure","Start shock management","Check capillary refill only","Her 2011 sheet lists: check pulse, assess skin, assess/control major bleeding, then shock management. A heavy bleed you see right away should still be controlled immediately."]],
+crit:[
+["Candidate finds a sucking chest wound but says they'll dress it during the secondary assessment.",true,"Managing an injury that compromises breathing belongs in the primary survey. Delaying it = failure to manage a breathing problem."],
+["Candidate calls for transport at 8 minutes, then continues the secondary assessment en route.",false,"Transport was initiated within 10 minutes. Continuing assessment is fine."],
+["Candidate never states BSI or scene safety, but otherwise does a perfect assessment.",true,"BSI and scene safety are both critical criteria. A perfect assessment still fails."],
+["Candidate starts palpating the abdomen before checking the airway on an unresponsive patient.",true,"Starting the secondary assessment before addressing airway, breathing and circulation is a critical fail."],
+["Candidate places the patient on a nasal cannula at 4 L/min for a major multi-system trauma.",true,"Trauma patients need high-concentration oxygen; failing to provide it is critical."]]},
+
+{id:"medical",name:"Patient Assessment/Management – Medical",short:"Medical Assessment",min:15,pts:42,hers:true,
+steps:["Takes or verbalizes appropriate body substance isolation (BSI) precautions","Determines the scene/situation is safe","Determines the mechanism of injury/nature of illness","Determines the number of patients","Requests additional help if necessary","Considers stabilization of the spine","Verbalizes general impression of the patient","Determines responsiveness / level of consciousness (AVPU)","Determines chief complaint / apparent life-threats","Airway and breathing: assesses, and assures adequate ventilation","Airway and breathing: initiates appropriate oxygen therapy","Circulation: assesses/controls major bleeding","Circulation: checks pulse","Circulation: assesses skin (color, temperature or condition)","Identifies patient priority and makes treatment/transport decision","History of present illness: Onset, Provocation, Quality","History of present illness: Radiation, Severity, Time","Asks clarifying questions about associated signs and symptoms related to OPQRST","Past medical history: Allergies, Medications","Past medical history: Past pertinent history, Last oral intake, Events leading to present illness","Secondary assessment: assesses the affected body part/system","Vital signs: pulse and blood pressure","Vital signs: respiratory rate and quality","States field impression of the patient","Interventions: verbalizes proper interventions/treatment","Reassessment: demonstrates how and when to reassess the patient to determine changes in condition","Provides an accurate verbal report to the arriving EMS unit"],
+sp:[1,1,1,1,1,1,1,1,1,2,1,1,1,1,1,3,3,2,2,3,5,2,2,1,1,1,1],
+notes:{},
+tips:{7:"AVPU = Alert, responds to Verbal, responds to Pain, Unresponsive.",17:"Clarifying questions are worth 2 points: ask about associated symptoms (e.g. nausea, shortness of breath, sweating with chest pain).",20:"Systems on her sheet: cardiovascular, pulmonary, neurological, musculoskeletal, integumentary, GI/GU, reproductive, psychological/social. Pick the ones that fit the complaint.",22:"Respiratory rate AND quality are each a point. Say both, e.g. '18 and unlabored.'"},
+critical:["Failure to initiate or call for transport within the 15-minute time limit","Failure to take or verbalize BSI precautions","Failure to determine scene safety before approaching the patient","Failure to voice and ultimately provide appropriate oxygen therapy","Failure to assess/provide adequate ventilation","Failure to find or appropriately manage problems with airway, breathing, hemorrhage or shock","Failure to differentiate the need for immediate transport vs. continued assessment/treatment on scene","Doing the secondary exam before assessing and treating threats to airway, breathing and circulation","Failure to provide an accurate report to the arriving EMS unit","Orders a dangerous or inappropriate intervention","Failure to manage the patient as a competent EMT","Exhibits unacceptable affect with patient or other personnel"],
+facts:[
+["What is the time limit to initiate or call for transport in the Medical station?","15 minutes","10 minutes","5 minutes","20 minutes","Medical is 15 minutes; Trauma is 10."],
+["What does OPQRST stand for?","Onset, Provocation, Quality, Radiation, Severity, Time","Oxygen, Pulse, Quality, Rate, Skin, Temperature","Onset, Pain, Quality, Rate, Signs, Treatment","Oxygen, Position, Quiet, Reassure, Support, Transport","OPQRST is your history of present illness for the chief complaint, followed by clarifying questions."],
+["Before helping a patient take nitroglycerin or aspirin, what must you do?","Obtain medical direction or verbalize standing orders","Nothing — EMTs can always give medications","Ask a bystander for permission","Wait until arrival at the hospital","EMTs only give or assist with medications under medical direction or standing orders. Say it out loud; giving a medication carelessly can be scored as a dangerous or inappropriate intervention."],
+["What is the final step on the Medical sheet?","Give an accurate verbal report to the arriving EMS unit","Take a second blood pressure","Ask about allergies","State scene safety","The handoff report is the last item, and an inaccurate report is a critical fail."],
+["How often should you reassess an unstable patient?","About every 5 minutes","Every 15 minutes","Every 30 minutes","Only once at the hospital","Standard teaching: unstable every 5 minutes, stable every 15. The sheet asks you to show how AND when to reassess."],
+["In the Medical station, the secondary assessment focuses on…","The affected body system(s) related to the complaint","A full head-to-toe trauma exam every time","Only the patient's back","Nothing — it's skipped in medical patients","You assess the systems tied to the complaint (cardiac, pulmonary, neuro, GI, etc.)."],
+["On her Medical sheet, what is the first item under Circulation?","Assesses/controls major bleeding","Checks pulse","Assesses skin","Initiates shock management","Watch out: Medical lists bleeding first, then pulse, then skin. Her Trauma sheet lists pulse first and bleeding third."],
+["What does AVPU stand for?","Alert, Verbal, Pain, Unresponsive","Airway, Ventilation, Pulse, Urgency","Awake, Vocal, Pale, Unstable","Alert, Vital signs, Pupils, Unconscious","AVPU is how her Medical sheet measures level of consciousness."],
+["Which vital signs does her Medical sheet require?","Pulse, blood pressure, respiratory rate and respiratory quality","Only blood pressure","Pulse and temperature","SpO2 and blood glucose","4 points: pulse, BP, respiratory rate, respiratory quality."],
+["How many points are the OPQRST clarifying questions worth?","2 points","1 point","5 points","None — they are optional","Clarifying questions about associated signs and symptoms are worth 2 of the 8 history-of-present-illness points."],
+["Which comes first in the Medical sheet's history section?","OPQRST history of present illness","Last oral intake","Field impression","Verbal report","History of present illness (OPQRST + clarifying questions) comes before past medical history."]],
+crit:[
+["Candidate covers OPQRST well but forgets to ask about allergies, medications and the rest of the past history.",false,"Not a critical fail on her sheet, but it costs up to 5 points (1 per past-history item)."],
+["Candidate calls for transport at 13 minutes and continues the history while waiting.",false,"Transport was initiated within the 15-minute limit."],
+["Candidate gives the arriving crew a report with the wrong blood pressure and the wrong complaint.",true,"An inaccurate verbal report to the arriving EMS unit is a critical fail."],
+["Candidate's patient is breathing 6 times a minute, shallow. Candidate places a non-rebreather and moves on to OPQRST.",true,"Shallow breathing at 6/min is inadequate — the patient needs assisted ventilation (BVM), not just a mask."]]},
+
+{id:"bvm",name:"BVM Ventilation of an Apneic Adult Patient",short:"BVM Ventilation",min:5,pts:17,
+steps:["Takes or verbalizes body substance isolation (BSI) precautions","Checks responsiveness","Checks breathing (at least 5, no more than 10 seconds)","Requests additional EMS assistance","Checks pulse (at least 5, no more than 10 seconds)","Opens the airway properly and looks in the mouth","Prepares the rigid suction catheter","Turns on power to the suction device or retrieves a manual unit","Inserts the rigid catheter without applying suction","Suctions the mouth and oropharynx","Re-opens the airway manually after suctioning","Inserts an oropharyngeal airway (OPA)","Ventilates immediately with the BVM (not yet attached to oxygen)","Re-checks the pulse","Attaches reservoir and connects BVM to oxygen at 15 L/min","Ventilates adequately: volume causing visible chest rise AND rate of 10–12/min"],
+sp:[1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,2],
+notes:{1:"The patient is unresponsive.",2:"The patient is apneic.",4:"The patient has a weak carotid pulse of 60.",5:"The mouth is full of secretions and vomitus.",9:"The mouth and oropharynx are clear.",11:"No gag reflex. The patient accepts the adjunct.",12:"Ventilation is being performed without difficulty.",15:"How would you know if you are delivering appropriate volumes with each ventilation?  (Answer: visible chest rise.)"},
+tips:{12:"If she starts with the BVM already attached to oxygen, she still gets this point as long as the first breath comes within 30 seconds."},
+critical:["Failure to initiate ventilations within 30 seconds after taking BSI precautions, or interrupting ventilations for more than 30 seconds at any time","Failure to take or verbalize BSI precautions","Failure to suction the airway before ventilating","Suctions the patient for an excessive and prolonged time","Failure to check responsiveness and breathing for at least 5 but no more than 10 seconds","Failure to check pulse for at least 5 but no more than 10 seconds","Failure to voice and ultimately provide high oxygen concentration (at least 85%)","Failure to ventilate the patient at a rate of 10–12 per minute","Failure to provide adequate volumes per breath (maximum 2 errors per minute allowed)","Insertion or use of any adjunct in a manner dangerous to the patient","Failure to manage the patient as a competent EMT","Exhibits unacceptable affect with patient or other personnel","Uses or orders a dangerous or inappropriate intervention"],
+facts:[
+["What is the correct adult ventilation rate on the BVM sheet?","10–12 breaths per minute (1 every 5–6 seconds)","20–24 breaths per minute","4–6 breaths per minute","30 breaths per minute","The 2011 sheet says 10–12/min and never more than 12. Count about 5–6 seconds per breath and keep it up for at least a minute."],
+["How do you know you're delivering adequate volume with each ventilation?","Visible chest rise","The bag fully empties","The patient's skin turns pink right away","You hear air escaping","The examiner will ask this exact question. The answer is visible chest rise."],
+["When do you apply suction with a rigid (Yankauer) catheter?","On the way out — insert without suction, then suction while withdrawing","While inserting","Continuously for 30 seconds","Only after inserting the OPA","Insert to the proper depth without suction, then suction as you withdraw."],
+["On her 2011 BVM sheet, how soon must ventilations start?","Within 30 seconds after taking BSI precautions","Within 2 minutes","Any time after the pulse check","Within 5 minutes","The 2011 sheet makes it a critical fail not to start ventilating within 30 seconds of BSI, or to interrupt ventilations for more than 30 seconds at any time. Move fast through the checks and suction."],
+["Why do you ventilate immediately before attaching oxygen?","To avoid delaying ventilation of an apneic patient","Because oxygen is dangerous at first","To test the bag for leaks","Because the sheet says O2 is optional","The patient isn't breathing — room-air ventilation now beats a delay. Then you attach the reservoir and O2."],
+["What flow rate do you connect the BVM to?","15 L/min with the reservoir attached","2 L/min","6 L/min","No oxygen needed","High-flow O2 at 15 L/min delivers the required high concentration (at least 85%)."],
+["On her 2011 BVM sheet, how long should the breathing check and the pulse check each take?","At least 5 but no more than 10 seconds each","30 seconds each","1 minute total","Pulse only — skip breathing","On the 2011 sheet they are separate steps: breathing (then request EMS), then pulse. Each must be 5–10 seconds or it is a critical fail."],
+["How do you size an OPA?","Corner of the mouth to the earlobe (or angle of the jaw)","Nose to chin","Chin to chest","Any size fits an adult","An OPA sized from the corner of the mouth to the earlobe or angle of the jaw."]],
+crit:[
+["Candidate ventilates once every 2 seconds because the patient \"looks bad.\"",true,"That's about 30/min — hyperventilation. The rate must be 10–12/min."],
+["Candidate takes BSI, checks responsiveness, breathing and pulse, suctions briefly, and gives the first breath 25 seconds after BSI.",false,"The first ventilation came within the 30-second window."],
+["Candidate checks for a pulse for 20 seconds before moving on.",true,"The 2011 sheet requires the pulse check to be at least 5 but no more than 10 seconds."],
+["Candidate inserts the OPA and ventilates without suctioning the vomitus.",true,"Failure to suction the airway before ventilating is a critical fail."],
+["Candidate squeezes the bag but the chest doesn't rise; candidate keeps going without repositioning.",true,"Ventilations must cause visible chest rise. Reposition the head, reseal the mask, and try again."]]},
+
+{id:"oxygen",name:"Oxygen Administration by Non-Rebreather Mask",short:"Oxygen / NRB",min:5,pts:11,
+steps:["Takes or verbalizes body substance isolation (BSI) precautions","Gathers appropriate equipment","Cracks the valve on the oxygen tank","Assembles the regulator to the tank","Opens the valve on the tank","Checks tank pressure","Checks for leaks","Attaches the non-rebreather mask to the correct port of the regulator","Turns on oxygen flow to prefill the reservoir bag","Adjusts the flow to 10 L/min or greater","Fits the mask snugly to the patient's face"],
+sp:[1,1,1,1,1,1,1,1,1,1,1],
+notes:{},
+critical:["Failure to take or verbalize BSI precautions","Failure to assemble the tank and regulator without leaks","Failure to prefill the reservoir bag","Failure to adjust the flow to 10 L/min or greater","Failure to assure a tight mask seal to the patient's face","Failure to manage the patient as a competent EMT","Exhibits unacceptable affect with patient or other personnel","Uses or orders a dangerous or inappropriate intervention"],
+facts:[
+["Why do you \"crack\" the tank valve before attaching the regulator?","To blow dust and debris out of the valve port","To check the tank's color","To test the patient's response","To fill the reservoir","A quick blast clears debris that could get into the regulator."],
+["What is the minimum flow for a non-rebreather on this sheet?","10 L/min","2 L/min","6 L/min","25 L/min","10 L/min or more (12–15 is typical). Too low and the reservoir collapses."],
+["Why prefill the reservoir bag?","So the patient gets high-concentration O2 from the first breath and the bag doesn't collapse","To check the bag's color","It's optional","To humidify the oxygen","Not prefilling the reservoir is a critical fail."],
+["On her 2011 oxygen sheet, what comes right after opening the tank valve?","Check tank pressure","Apply the mask","Prefill the reservoir","Adjust the flow rate","2011 order: open the valve, check tank pressure, then check for leaks. (Newer sheets swap those two.)"],
+["Does the 2011 oxygen station include a nasal cannula?","No — only the non-rebreather mask","Yes, after the patient refuses the mask","Yes, it is done first","Only for children","The 2011 sheet ends when the non-rebreather is fitted snugly. Newer sheets added a nasal cannula part."],
+["Roughly what oxygen concentration does a non-rebreather deliver?","Up to about 90%","About 24%","100% always","About 50%","An NRB can deliver up to about 90%; a nasal cannula about 24–44%."]],
+crit:[
+["Candidate puts the NRB on the patient before the reservoir has inflated.",true,"Failure to prefill the reservoir is a critical fail."],
+["Candidate sets the NRB to 15 L/min and adjusts the nose clip for a snug fit.",false,"15 L/min is above the 10 L/min minimum and a snug seal is required — this is correct."],
+["Candidate hears a hiss at the regulator and ignores it.",true,"The tank and regulator must be assembled without leaks."],
+["Candidate sets the non-rebreather to 6 L/min.",true,"The non-rebreather must be at 10 L/min or greater."]]},
+
+{id:"aed",name:"Cardiac Arrest Management / AED",short:"Cardiac Arrest / AED",min:10,pts:18,
+steps:["Takes or verbalizes body substance isolation (BSI) precautions","Determines the scene/situation is safe","Attempts to question bystanders about the arrest events","Checks patient responsiveness","Assesses breathing","Checks carotid pulse (no more than 10 seconds)","Immediately begins chest compressions","Requests additional EMS response","Performs 2 minutes (5 cycles) of 1-rescuer adult CPR: depth/rate, 30:2 ratio, full recoil, breath volume, interruptions under 10 seconds","Turns on power to the AED","Follows prompts and correctly attaches the AED to the patient","Stops CPR and ensures everyone is clear during rhythm analysis","Ensures all clear and delivers the shock","Immediately directs the rescuer to resume chest compressions"],
+sp:[1,1,1,1,1,1,1,1,5,1,1,1,1,1],
+notes:{3:"The patient is unresponsive.",4:"The patient is apneic (or has only agonal, gasping breaths).",5:"The patient is pulseless.",8:"After 2 minutes, a second rescuer arrives and takes over compressions while you operate the AED."},
+tips:{8:"Worth 5 points: one each for adequate depth and rate, correct 30:2 ratio, full chest recoil, breaths that make the chest rise, and no interruption over 10 seconds."},
+critical:["Failure to take or verbalize BSI precautions","Failure to immediately begin chest compressions as soon as pulselessness is confirmed","Failure to deliver a shock in a timely manner","Interrupting CPR for more than 10 seconds at any point","Failure to demonstrate acceptable high-quality, 1-rescuer adult CPR","Failure to operate the AED properly","Failure to correctly attach the AED to the patient","Failure to assure that all individuals are clear of the patient during rhythm analysis and before the shock (verbalized and observed)","Failure to immediately resume compressions after the shock","Failure to manage the patient as a competent EMT","Exhibits unacceptable affect with patient or other personnel","Uses or orders a dangerous or inappropriate intervention"],
+facts:[
+["What is the correct adult compression depth?","At least 2 inches but not more than 2.4 inches (5–6 cm)","About 1 inch","3–4 inches","As deep as possible","2 to 2.4 inches, with full chest recoil between compressions."],
+["What is the correct compression rate?","100–120 per minute","60–80 per minute","80–100 per minute","130–150 per minute","100–120/min. Think of the beat of \"Stayin' Alive.\""],
+["What is the 1-rescuer adult compression-to-ventilation ratio?","30:2","15:2","5:1","30:1","30 compressions to 2 breaths for adults with one rescuer."],
+["What is the longest you may pause CPR?","10 seconds","30 seconds","1 minute","5 seconds","Any interruption over 10 seconds is a critical fail."],
+["What do you do immediately after the shock is delivered?","Direct the rescuer to resume chest compressions right away","Check a pulse for 10 seconds","Analyze the rhythm again","Give two breaths, then check pulse","Resume compressions immediately — no pulse check after the shock."],
+["On her 2011 CPR/AED sheet, when do you request additional EMS?","Right after you start chest compressions","Before checking responsiveness","After the shock","Never — the AED is enough","2011 order: responsiveness, breathing, pulse, start compressions immediately, then request additional EMS."],
+["How many points is the 2 minutes of CPR worth on her sheet?","5 points","1 point","2 points","10 points","One each for depth/rate, ratio, full recoil, ventilation volume, and keeping interruptions under 10 seconds."],
+["How long do you perform 1-rescuer CPR before the AED arrives in this station?","2 minutes","30 seconds","5 minutes","Until the patient wakes up","You perform 2 minutes (about 5 cycles) of high-quality CPR, then the second rescuer arrives."],
+["Where do the AED pads go (anterior-lateral)?","Right upper chest below the collarbone; left side of the chest below the armpit","Both on the back","Both on the left chest","On the abdomen","Follow the pictures on the pads: right upper chest and left lower lateral chest."]],
+crit:[
+["While the AED analyzes, the candidate keeps doing compressions.",true,"You must stop CPR and ensure everyone is clear during analysis."],
+["After the shock, candidate checks a carotid pulse for 10 seconds before restarting CPR.",true,"Compressions must resume immediately after the shock."],
+["Candidate compresses at 110/min, 2.2 inches deep, allowing full recoil.",false,"That's high-quality CPR — within rate, depth and recoil guidelines."],
+["Candidate pauses compressions for 15 seconds to attach the pads.",true,"Any CPR interruption longer than 10 seconds is a critical fail."],
+["Candidate shouts \"Clear!\" and looks to make sure no one is touching the patient before shocking.",false,"Verbal and visual \"all clear\" is exactly what's required."]]},
+
+{id:"supine",name:"Spinal Immobilization (Supine Patient)",short:"Spinal – Supine",min:10,pts:14,
+steps:["Takes or verbalizes body substance isolation (BSI) precautions","Directs assistant to place/maintain head in the neutral, in-line position","Directs assistant to maintain manual stabilization of the head","Assesses motor, sensory and circulatory function in each extremity","Applies an appropriately sized cervical collar","Positions the immobilization device appropriately","Directs movement of the patient onto the device without compromising the spine","Applies padding to voids between the torso and the device as needed","Immobilizes the patient's torso to the device","Evaluates and pads behind the patient's head as needed","Immobilizes the patient's head to the device","Secures the patient's legs to the device","Secures the patient's arms to the device","Reassesses motor, sensory and circulatory function in each extremity"],
+notes:{3:"Motor, sensory and circulatory functions are present and normal.",13:"Motor, sensory and circulatory functions are present and normal."},
+critical:["Did not immediately direct, or take, manual stabilization of the head","Did not properly apply the cervical collar before ordering release of manual stabilization","Released, or ordered release of, manual stabilization before it was maintained mechanically","Manipulated or moved the patient excessively, causing potential spinal compromise","Head immobilized to the device before the device was secured to the torso","Patient moves excessively up, down, left or right on the device","Head immobilization allows excessive movement","Upon completion, the head is not in a neutral, in-line position","Did not reassess motor, sensory and circulatory functions after immobilizing to the device","Orders a dangerous or inappropriate intervention","Failure to manage the patient as a competent EMT","Exhibits unacceptable affect with patient or other personnel"],
+facts:[
+["Which gets secured to the board first?","The torso","The head","The legs","The arms","Torso before head. Securing the head first means any torso shift twists the neck — critical fail."],
+["When may the assistant release manual stabilization of the head?","Only after the head is mechanically secured to the device","As soon as the collar is on","After the patient is rolled","Whenever their arms get tired","A collar alone isn't enough. Releasing before the head is secured to the device is a critical fail."],
+["When do you check motor, sensory and circulation?","Before immobilization and again after","Only before","Only after","Never in this station","MSC in all four extremities before and after. Forgetting the reassessment is a critical fail."],
+["What is the last item on the supine sheet?","Reassess motor, sensory and circulation in each extremity","Secure the head","Apply the collar","Pad the voids","After legs and arms are secured, reassess MSC."],
+["Why pad behind the head?","To keep the head in a neutral, in-line position","For patient comfort only","To raise the head for breathing","It's never needed","Padding fills the gap so the head ends up neutral and in line."]],
+crit:[
+["Candidate applies the collar and tells the assistant, \"You can let go now,\" before the head is strapped.",true,"Releasing manual stabilization before the head is mechanically secured is critical."],
+["Candidate straps the torso, pads behind the head, then secures the head.",false,"Correct order: torso first, then pad and secure the head."],
+["Candidate secures the head first, then the chest straps.",true,"Head before torso is a critical fail."],
+["Candidate finishes and the patient can slide 3 inches toward the feet on the board.",true,"The patient must not move excessively up, down, left or right on the device."]]},
+
+{id:"seated",name:"Spinal Immobilization (Seated Patient)",short:"Spinal – Seated",min:10,pts:12,random:true,
+steps:["Takes or verbalizes body substance isolation (BSI) precautions","Directs assistant to place/maintain head in the neutral, in-line position","Directs assistant to maintain manual stabilization of the head","Assesses motor, sensory and circulatory function in each extremity","Applies an appropriately sized cervical collar","Positions the immobilization device behind the patient","Secures the device to the patient's torso","Evaluates torso fixation and adjusts as necessary","Evaluates and pads behind the patient's head as needed","Secures the patient's head to the device","Verbalizes moving the patient to a long backboard","Reassesses motor, sensory and circulatory function in each extremity"],
+notes:{3:"Motor, sensory and circulatory functions are present and normal.",11:"Motor, sensory and circulatory functions are present and normal."},
+critical:["Did not immediately direct, or take, manual stabilization of the head","Did not properly apply the cervical collar before ordering release of manual stabilization","Released, or ordered release of, manual stabilization before it was maintained mechanically","Manipulated or moved the patient excessively, causing potential spinal compromise","Head immobilized to the device before the device was secured to the torso","Device moves excessively up, down, left or right on the torso","Head immobilization allows excessive movement","Torso fixation inhibits chest rise, causing respiratory compromise","Upon completion, the head is not in a neutral, in-line position","Did not reassess motor, sensory and circulatory functions after voicing immobilization to the long board","Orders a dangerous or inappropriate intervention","Failure to manage the patient as a competent EMT","Exhibits unacceptable affect with patient or other personnel"],
+facts:[
+["What device is typically used in the seated station?","A short board or vest-type device (like a KED)","A traction splint","A scoop stretcher only","A pillow splint","A short spine device/vest secures the torso and head before moving to a long board."],
+["What's the risk if the torso straps are too tight?","They inhibit chest rise and compromise breathing","The patient gets cold","The collar falls off","There is no risk","Torso fixation that inhibits chest rise is a critical fail. Check that the patient can still breathe deeply."],
+["What do you verbalize after securing the head to the device?","Moving the patient to a long backboard","Removing the collar","Releasing the assistant","Calling medical direction","You verbalize moving the patient to a long board, then reassess MSC."],
+["Which is secured first: torso or head?","Torso","Head","Either — it doesn't matter","Legs","Same rule as supine: torso first, then head."]],
+crit:[
+["Candidate cinches the chest strap so tight the patient says they can't take a deep breath, and moves on.",true,"Torso fixation that inhibits chest rise is a critical fail."],
+["Candidate asks the patient to take a deep breath after tightening, then loosens the chest strap slightly.",false,"Evaluating and adjusting torso fixation is exactly what the sheet asks for."],
+["Candidate forgets to reassess motor, sensory and circulation at the end.",true,"Reassessment after immobilization is a critical criterion."]]},
+
+{id:"bleeding",name:"Bleeding Control / Shock Management",short:"Bleeding / Shock",min:10,pts:7,random:true,
+steps:["Takes or verbalizes body substance isolation (BSI) precautions","Applies direct pressure to the wound","Applies a tourniquet","Properly positions the patient","Administers high-concentration oxygen","Initiates steps to prevent heat loss","Indicates the need for immediate transportation"],
+sp:[1,1,1,1,1,1,1],
+notes:{1:"The wound continues to bleed.",2:"The bleeding is controlled. The patient is restless, with cool, clammy skin. BP 110/80, pulse 118, respirations 30."},
+critical:["Failure to take or verbalize BSI precautions","Failure to administer high-concentration oxygen","Failure to control hemorrhage using correct procedures in a timely manner","Failure to indicate the need for immediate transportation","Orders a dangerous or inappropriate intervention","Failure to manage the patient as a competent EMT","Exhibits unacceptable affect with patient or other personnel"],
+facts:[
+["What's the first thing you do for the bleeding wound (after BSI)?","Apply direct pressure","Apply a tourniquet","Elevate the leg","Apply ice","Direct pressure first. If the examiner says it keeps bleeding, move to a tourniquet."],
+["The wound keeps bleeding through direct pressure. What next?","Apply a tourniquet","Add more gauze and wait 10 minutes","Use a pressure point","Remove the dressing to look","On the current sheet, the next step after failed direct pressure is a tourniquet."],
+["Where should a tourniquet go?","About 2–3 inches above the wound, not over a joint","Directly on the wound","Below the wound","Over the knee or elbow","Place it proximal to the wound, avoiding joints, and tighten until bleeding stops."],
+["The patient now shows signs of shock. What positioning?","Lay the patient supine","Sit the patient upright","Prone","Recovery position on the injured side","Properly position (supine), then high-concentration O2, prevent heat loss, and call for immediate transport."],
+["Does elevating the arm or using a pressure point count for bleeding control on the 2011 exam?","No — if direct pressure fails, go to a tourniquet","Yes, always elevate first","Yes, pressure points are required","Only for leg wounds","The 2011 guide says elevation and arterial pressure points are not effective. Waiting too long to apply the tourniquet is a critical item."],
+["What's the final step on the sheet?","Indicate the need for immediate transportation","Remove the tourniquet","Take a SAMPLE history","Splint the arm","Failure to indicate immediate transport is a critical fail."],
+["How do you prevent heat loss?","Cover the patient with a blanket","Apply cold packs","Remove the patient's clothing and leave them exposed","Give them a drink","Hypothermia worsens shock — cover them up."]],
+crit:[
+["Candidate applies the tourniquet, then loosens it every few minutes to \"let blood flow.\"",true,"Once applied, a tourniquet stays on. Loosening it causes renewed hemorrhage."],
+["Candidate applies direct pressure, then a tourniquet when bleeding continues, then high-flow O2 by NRB.",false,"That's the correct sequence."],
+["Candidate controls the bleeding and treats shock but never mentions transport.",true,"Failure to indicate the need for immediate transport is critical."],
+["Candidate puts the shocky patient on a nasal cannula at 2 L/min.",true,"Shock requires high-concentration oxygen."]]},
+
+{id:"longbone",name:"Long Bone Immobilization",short:"Long Bone",min:5,pts:10,random:true,
+steps:["Takes or verbalizes body substance isolation (BSI) precautions","Directs application of manual stabilization of the injury","Assesses distal motor, sensory and circulatory functions","Measures the splint","Applies the splint","Immobilizes the joint above the injury site","Immobilizes the joint below the injury site","Secures the entire injured extremity","Immobilizes the hand/foot in the position of function","Reassesses distal motor, sensory and circulatory functions"],
+sp:[1,1,1,1,1,1,1,1,1,1],
+notes:{2:"Motor, sensory and circulatory functions are present and normal.",9:"Motor, sensory and circulatory functions are present and normal."},
+critical:["Did not immediately stabilize the extremity manually","Grossly moves the injured extremity","Did not immobilize the joint above and the joint below the injury site","Did not immobilize the hand or foot in a position of function","Did not reassess distal motor, sensory and circulatory functions before and after splinting","Orders a dangerous or inappropriate intervention","Failure to manage the patient as a competent EMT","Exhibits unacceptable affect with patient or other personnel"],
+facts:[
+["For a long bone (e.g. mid-shaft forearm) fracture, what must the splint immobilize?","The joint above and the joint below the injury","Only the injury site","The bone above and below","The whole body","Long bone = joints above and below. (For a joint injury, it's the bones above and below.)"],
+["What's the hand's \"position of function\" per the 2011 guide?","Wrist bent back slightly (about 20–30°) with fingers slightly curled","Fingers straight and the palm flat","Fist clenched tightly","Wrist bent fully forward","A roll of gauze in the palm helps. For the foot: avoid pointing the toes hard or pulling them all the way up."],
+["How do you measure the splint?","Against the uninjured limb","Against the injured limb, moving it into position","Guess based on patient height","You don't — any size works","Measure on the uninjured side so you don't move the injury."],
+["When do you check distal MSC?","Before and after splinting","Only before","Only after","Only if the patient complains","Not reassessing before and after is a critical fail."],
+["What's the second step, right after BSI?","Direct manual stabilization of the injury","Measure the splint","Apply the splint","Check a blood pressure","Stabilize the extremity immediately — not doing so is critical."]],
+crit:[
+["Candidate splints a mid-forearm fracture from wrist to just below the elbow, leaving the elbow free.",true,"A long bone splint must immobilize the joints above and below — the elbow is left free."],
+["Candidate splints the hand flat with fingers fully extended.",true,"The hand must be in the position of function."],
+["Candidate checks pulse, movement and sensation before and after splinting.",false,"Before-and-after MSC checks are exactly right."]]},
+
+{id:"joint",name:"Joint Immobilization",short:"Joint",min:5,pts:9,random:true,
+steps:["Takes or verbalizes body substance isolation (BSI) precautions","Directs application of manual stabilization of the injury","Assesses distal motor, sensory and circulatory functions","Selects proper splinting material","Immobilizes the site of the injury","Immobilizes the bone above the injury site","Immobilizes the bone below the injury site","Secures the entire injured extremity","Reassesses distal motor, sensory and circulatory functions"],
+sp:[1,1,1,1,1,1,1,1,1],
+notes:{2:"Motor, sensory and circulatory functions are present and normal.",3:"The only splinting material provided is a sling and swathe.",8:"Motor, sensory and circulatory functions are present and normal."},
+critical:["Did not immediately stabilize the extremity manually","Grossly moves the injured extremity","Did not immobilize the bone above and the bone below the injury site","Did not reassess distal motor, sensory and circulatory functions before and after splinting","Orders a dangerous or inappropriate intervention","Failure to manage the patient as a competent EMT","Exhibits unacceptable affect with patient or other personnel"],
+facts:[
+["For a joint injury (e.g. shoulder or elbow), what must the splint immobilize?","The bone above and the bone below the joint","The joint above and the joint below","Only the joint","Nothing — use a sling only if asked","Joint = bones above and below. Long bone = joints above and below."],
+["How should you generally splint an injured joint?","In the position found, without forcing it straight","Straighten it first","Bend it to 90°","Let the patient decide","Splint joints as found; forcing them can damage nerves and vessels."],
+["On the 2011 exam, what splint is used in the Joint station?","A sling and swathe — it is the only approved material","A traction splint","A long backboard","A cervical collar","If a candidate asks for anything else, the examiner says a sling and swathe is the only approved material. The sling supports the arm; the swathe binds it to the chest."],
+["What's the final step on the joint sheet?","Reassess distal motor, sensory and circulatory functions","Select splint material","Apply manual stabilization","Immobilize the site","Reassess MSC after splinting."]],
+crit:[
+["Candidate puts the arm in a sling but never applies the swathe; the arm swings freely.",true,"The bone above/below isn't immobilized — the humerus still moves."],
+["Candidate tries to straighten a bent elbow before splinting and the patient screams.",true,"Grossly moving the injured extremity is a critical fail."],
+["Candidate splints the elbow in the position found, securing the upper arm and forearm.",false,"Immobilizing the bones above and below in the position found is correct."]]}
+];
+const byId=Object.fromEntries(S.map(s=>[s.id,s]));
+
+/* ---------- STORAGE ---------- */
+const KEY="emtSkillsTrainer1";
+let store={name:"",st:{},missed:{},best:{}};
+try{const d=JSON.parse(localStorage.getItem(KEY)||"{}");store=Object.assign(store,d)}catch(e){}
+const save=()=>{try{localStorage.setItem(KEY,JSON.stringify(store))}catch(e){}};
+
+/* ---------- HELPERS ---------- */
+const app=document.getElementById("app"),homeBtn=document.getElementById("homeBtn");
+const esc=s=>String(s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const shuffle=a=>{a=a.slice();for(let i=a.length-1;i>0;i--){const j=Math.random()*(i+1)|0;[a[i],a[j]]=[a[j],a[i]]}return a};
+const pick=(a,n)=>shuffle(a).slice(0,n);
+const pct=(c,a)=>a?Math.round(100*c/a):0;
+const KEYS="ABCD";
+const YES="Yes — critical fail",NO="No — not a critical fail";
+let timerId=null,keyHandler=null;
+function stopTimer(){if(timerId){clearInterval(timerId);timerId=null}}
+function view(html,showHome=true){stopTimer();keyHandler=null;app.innerHTML=html;homeBtn.hidden=!showHome;window.scrollTo(0,0)}
+function record(sid,id,ok){const s=store.st[sid]||(store.st[sid]={a:0,c:0});s.a++;if(ok)s.c++;if(id){if(ok)delete store.missed[id];else store.missed[id]=1}save()}
+
+/* ---------- QUESTION FACTORY ---------- */
+function makeQ(id){
+  const [sid,code]=id.split("-"),s=byId[sid];if(!s)return null;
+  const t=code[0],i=+code.slice(1);
+  if(t==="f"){const f=s.facts[i];if(!f)return null;return{id,sid,kind:"Know it",prompt:f[0],answer:f[1],options:shuffle(f.slice(1,5)),why:f[5]}}
+  if(t==="c"){const c=s.crit[i];if(!c)return null;return{id,sid,kind:"Critical fail?",prompt:c[0],answer:c[1]?YES:NO,options:[YES,NO],why:c[2]}}
+  if(t==="n"){if(i>=s.steps.length-1)return null;const cur=s.steps[i],nx=s.steps[i+1];
+    const others=s.steps.filter((x,j)=>j!==i&&j!==i+1&&x!==nx);
+    const note=s.notes[i]?`<div class="note">${esc(s.notes[i])}</div>`:"";
+    return{id,sid,kind:"What's next?",prompt:`You just did: “${cur}.” What comes next on the sheet?`,pre:note,answer:nx,options:shuffle([nx,...pick(others,3)]),why:`Step ${i+2} of ${s.steps.length}: “${nx}.”${s.notes[i+1]?" The examiner will then say: “"+s.notes[i+1]+"”":""}`}}
+  return null;
+}
+function idsFor(s){const a=[];s.facts.forEach((_,i)=>a.push(s.id+"-f"+i));s.crit.forEach((_,i)=>a.push(s.id+"-c"+i));s.steps.slice(0,-1).forEach((_,i)=>a.push(s.id+"-n"+i));return a}
+function makeSeq(s){const n=Math.min(5,s.steps.length),st=Math.random()*(s.steps.length-n+1)|0;const items=s.steps.slice(st,st+n);return{sid:s.id,kind:"Put in order",seq:true,items,start:st,pool:shuffle(items.map((t,k)=>k)),picked:[]}}
+function buildQuiz(sids,n){
+  const ss=sids.map(x=>byId[x]);let ids=[];ss.forEach(s=>ids.push(...idsFor(s)));
+  // weight toward missed items
+  const missed=ids.filter(x=>store.missed[x]);
+  let chosen=[...new Set([...pick(missed,Math.ceil(n/3)),...shuffle(ids)])].slice(0,n-2);
+  let qs=chosen.map(makeQ).filter(Boolean);
+  qs.splice(Math.floor(qs.length/3),0,makeSeq(ss[Math.random()*ss.length|0]));
+  qs.splice(Math.floor(qs.length*2/3),0,makeSeq(ss[Math.random()*ss.length|0]));
+  return qs;
+}
+
+/* ---------- HOME ---------- */
+function home(){
+  const tot=Object.values(store.st).reduce((a,s)=>[a[0]+s.a,a[1]+s.c],[0,0]);
+  const nMiss=Object.keys(store.missed).filter(id=>makeQ(id)).length;
+  const hi=store.name?`Let's practice, ${esc(store.name)}.`:"Let's practice.";
+  view(`
+  <div class="card">
+    <h2>${hi}</h2>
+    <p class="muted" style="margin:0 0 14px">Quiz yourself on every NREMT EMT skill station. You get feedback on every answer, and the questions you miss come back until you've got them.</p>
+    <div class="stats" style="margin-bottom:14px"><div><b>${tot[0]}</b><span class="small muted">answered</span></div><div><b>${pct(tot[1],tot[0])}%</b><span class="small muted">correct</span></div><div><b>${nMiss}</b><span class="small muted">to review</span></div></div>
+    <div class="row">
+      <button class="btn red" id="quickQ">Quick quiz · 12 questions</button>
+      <button class="btn" id="reviewQ" ${nMiss?"":"disabled"}>Review missed (${nMiss})</button>
+    </div>
+  </div>
+  <div class="card">
+    <h3>Patient scenarios</h3>
+    <p class="small muted" style="margin:-4px 0 12px">A new patient each time. Make the calls the examiner grades on the Trauma and Medical stations: oxygen or bag-valve mask, bleeding control, GCS, priority, history, treatment.</p>
+    <div class="row"><button class="btn red" id="scT">Trauma patient</button><button class="btn red" id="scM">Medical patient</button><button class="btn" id="scA">Surprise me</button></div>
+  </div>
+  <h3>Skill stations</h3>
+  <p class="small muted" style="margin:-4px 0 10px">Tap a station to study its sheet, quiz it, or run it start to finish against the clock.</p>
+  <div class="stations">${S.map(s=>{const st=store.st[s.id]||{a:0,c:0};const b=store.best[s.id];return`
+    <button class="st" data-s="${s.id}"><b>${esc(s.short)}</b>
+    <span class="small muted">${s.min} min · ${s.pts} pts${s.random?" · random skill":""}${st.a?` · ${pct(st.c,st.a)}% of ${st.a}`:""}${b!=null?` · best run ${b}%`:""}</span>
+    <div class="meter"><i style="width:${pct(st.c,st.a)}%"></i></div></button>`}).join("")}</div>
+  <div class="card" style="margin-top:14px">
+    <h3>Exam-day reminders</h3>
+    <ul class="crit">
+      <li>Say BSI precautions out loud first, every station. Then scene safety where it's on the sheet.</li>
+      <li>Verbalize everything you do and see. The examiner can only score what they hear or see.</li>
+      <li>Any critical criterion checked = that skill fails, no matter how many points you earned.</li>
+      <li>Trauma: call for transport within 10 minutes. Medical: within 15.</li>
+      <li>The random skill is one of: seated spinal, bleeding/shock, long bone, or joint immobilization.</li>
+    </ul>
+    <details style="margin-top:10px"><summary>Settings</summary>
+      <div class="row" style="margin-top:8px"><input class="name" id="nm" placeholder="Your first name (optional)" value="${esc(store.name)}" maxlength="30"><button class="btn" id="saveNm">Save</button></div>
+      <div class="row" style="margin-top:10px"><button class="btn" id="reset">Reset all progress</button><span class="small muted" id="resetMsg"></span></div>
+    </details>
+  </div>
+  <p class="small muted">Unofficial study aid. Trauma and Medical match her program's 2011 NREMT sheets line by line. BVM, Oxygen, CPR/AED, Bleeding, Long Bone and Joint follow the 2011 NREMT EMT Users Guide. The two spinal stations follow the NREMT sheets in close paraphrase. Wording is paraphrased throughout.</p>`,false);
+  app.querySelectorAll(".st").forEach(b=>b.onclick=()=>station(b.dataset.s));
+  document.getElementById("scT").onclick=()=>scenario("trauma");document.getElementById("scM").onclick=()=>scenario("medical");document.getElementById("scA").onclick=()=>scenario("any");
+  document.getElementById("quickQ").onclick=()=>startQuiz(S.map(s=>s.id),12,"Mixed quiz");
+  const rq=document.getElementById("reviewQ");rq.onclick=()=>{const qs=shuffle(Object.keys(store.missed)).map(makeQ).filter(Boolean).slice(0,15);if(qs.length)runQuiz(qs,"Review missed")};
+  document.getElementById("saveNm").onclick=()=>{store.name=document.getElementById("nm").value.trim().slice(0,30);save();home()};
+  let armed=false;document.getElementById("reset").onclick=e=>{if(!armed){armed=true;e.target.textContent="Tap again to confirm";return}store={name:store.name,st:{},missed:{},best:{}};save();home()};
+}
+
+/* ---------- STATION / STUDY ---------- */
+function station(sid){
+  const s=byId[sid];
+  view(`<div class="card">
+    <span class="chip red">${s.min}-minute station</span> <span class="chip">${s.pts} points</span>${s.random?' <span class="chip">Random skill</span>':""}${s.hers?' <span class="chip">Matches her 2011 sheet</span>':s.sp?' <span class="chip">2011 NREMT sheet</span>':""}
+    <h2 style="margin-top:10px">${esc(s.name)}</h2>
+    <div class="row" style="margin-top:12px">
+      <button class="btn red" id="qz">Quiz this station</button>
+      <button class="btn pri" id="rn">Run the station</button>${s.hers?'<button class="btn" id="sc">Practice a patient scenario</button>':""}
+    </div>
+  </div>
+  <div class="card"><h3>The sheet, step by step</h3>
+    <ol class="sheet">${s.steps.map((t,i)=>`<li><div style="flex:1">${esc(t)}${s.notes[i]?`<div class="note">${esc(s.notes[i])}</div>`:""}${s.tips&&s.tips[i]?`<div class="tip">${esc(s.tips[i])}</div>`:""}</div>${s.sp?`<span class="pt">${s.sp[i]} pt</span>`:""}</li>`).join("")}</ol></div>
+  <div class="card"><h3>Critical criteria — automatic fail</h3><ul class="crit">${s.critical.map(c=>`<li>${esc(c)}</li>`).join("")}</ul></div>`);
+  document.getElementById("qz").onclick=()=>startQuiz([sid],10,s.short);
+  document.getElementById("rn").onclick=()=>runStation(sid);
+  if(s.hers)document.getElementById("sc").onclick=()=>scenario(sid);
+}
+
+/* ---------- QUIZ ---------- */
+function startQuiz(sids,n,title){runQuiz(buildQuiz(sids,n),title)}
+function runQuiz(qs,title){
+  const ses={qs,i:0,right:0,log:[],title};
+  const show=()=>{
+    const q=ses.qs[ses.i],s=byId[q.sid];
+    const head=`<div class="row" style="justify-content:space-between"><span class="small muted">${esc(title)} · ${ses.i+1} of ${ses.qs.length}</span><span class="small muted">${ses.right} correct</span></div>
+      <div class="prog"><i style="width:${100*ses.i/ses.qs.length}%"></i></div>`;
+    if(q.seq)return showSeq(q,s,head);
+    view(`${head}<div class="card"><span class="chip red">${esc(q.kind)}</span> <span class="chip">${esc(s.short)}</span>
+      ${q.pre||""}<div class="q">${esc(q.prompt)}</div>
+      <div class="opts">${q.options.map((o,k)=>`<button class="opt" data-k="${k}"><span class="k">${KEYS[k]}</span><span>${esc(o)}</span></button>`).join("")}</div>
+      <div id="fb"></div></div>`);
+    const btns=[...app.querySelectorAll(".opt")];
+    const choose=k=>{
+      if(btns[0].disabled)return;const ok=q.options[k]===q.answer;
+      btns.forEach((b,j)=>{b.disabled=true;if(q.options[j]===q.answer)b.classList.add("ok");else if(j===k)b.classList.add("bad")});
+      if(ok)ses.right++;else ses.log.push({q,your:q.options[k]});
+      record(q.sid,q.id,ok);feedback(ok,q.why,ok?null:q.answer);
+    };
+    btns.forEach((b,k)=>b.onclick=()=>choose(k));
+    keyHandler=e=>{const k="1234abcd".indexOf(e.key.toLowerCase())%4;if(k>=0&&k<btns.length&&!btns[0].disabled)choose(k);else if(e.key==="Enter"){const n=document.getElementById("nx");if(n)n.click()}};
+  };
+  const feedback=(ok,why,ans)=>{
+    document.getElementById("fb").innerHTML=`<div class="fb ${ok?"ok":"bad"}"><strong>${ok?"Correct.":"Not quite."}</strong>${ans&&!ok?`<div><b>Answer:</b> ${esc(ans)}</div>`:""}<div>${why}</div></div>
+      <div class="row" style="margin-top:12px;justify-content:flex-end"><button class="btn pri" id="nx">${ses.i+1<ses.qs.length?"Next question →":"See results"}</button></div>`;
+    const nx=document.getElementById("nx");nx.onclick=()=>{ses.i++;ses.i<ses.qs.length?show():done()};nx.focus({preventScroll:true});
+    nx.scrollIntoView({block:"nearest",behavior:"smooth"});
+  };
+  const showSeq=(q,s,head)=>{
+    const draw=()=>{
+      view(`${head}<div class="card"><span class="chip red">Put in order</span> <span class="chip">${esc(s.short)}</span>
+        <div class="q">Tap these ${q.items.length} steps in the order they appear on the sheet.</div>
+        <div class="small muted" style="margin-bottom:6px">Your order (tap to remove)</div>
+        <div class="seqpick">${q.picked.map((k,n)=>`<button class="opt" data-rm="${n}"><span class="k">${n+1}</span><span>${esc(q.items[k])}</span></button>`).join("")||'<span class="small muted" style="padding:10px">Nothing yet</span>'}</div>
+        <div class="seqpool">${q.pool.filter(k=>!q.picked.includes(k)).map(k=>`<button class="opt" data-add="${k}"><span class="k">+</span><span>${esc(q.items[k])}</span></button>`).join("")}</div>
+        <div class="row" style="margin-top:12px;justify-content:flex-end"><button class="btn pri" id="chk" ${q.picked.length===q.items.length?"":"disabled"}>Check order</button></div><div id="fb"></div></div>`);
+      app.querySelectorAll("[data-add]").forEach(b=>b.onclick=()=>{q.picked.push(+b.dataset.add);draw()});
+      app.querySelectorAll("[data-rm]").forEach(b=>b.onclick=()=>{q.picked.splice(+b.dataset.rm,1);draw()});
+      document.getElementById("chk").onclick=check;
+    };
+    const check=()=>{
+      const ok=q.picked.every((k,n)=>k===n);
+      app.querySelectorAll("[data-rm]").forEach((b,n)=>{b.disabled=true;b.classList.add(q.picked[n]===n?"ok":"bad")});
+      document.getElementById("chk").remove();
+      if(ok)ses.right++;else ses.log.push({q,your:"Order was mixed up"});
+      record(q.sid,null,ok);
+      const list=`<ol class="sheet" style="margin-top:8px">${q.items.map((t,n)=>`<li class="done"><div><span class="small muted">Step ${q.start+n+1}:</span> ${esc(t)}</div></li>`).join("")}</ol>`;
+      feedback(ok,(ok?"You nailed the sequence.":"Here's the correct order:")+list,null);
+    };
+    draw();
+  };
+  const done=()=>{
+    const p=pct(ses.right,ses.qs.length);
+    const msg=p>=90?"Exam-ready on these. Keep it sharp.":p>=75?"Solid. Review the misses below and run it again.":p>=50?"Getting there — study the sheet for the stations you missed, then retry.":"Start with the study sheets, then come back to the quiz.";
+    view(`<div class="card" style="text-align:center"><div class="big">${p}%</div><p class="cond" style="font-size:22px;margin:4px 0">${ses.right} of ${ses.qs.length} correct</p><p class="muted">${msg}</p>
+      <div class="row" style="justify-content:center"><button class="btn red" id="again">Another round</button><button class="btn" id="hm">Home</button></div></div>
+      ${ses.log.length?`<div class="card"><h3>What to review</h3>${ses.log.map(l=>`<div class="miss"><span class="chip">${esc(byId[l.q.sid].short)}</span><div style="font-weight:600;margin:6px 0">${l.q.seq?"Put-in-order question":esc(l.q.prompt)}</div>${l.q.seq?`<ol class="sheet">${l.q.items.map(t=>`<li class="done"><div>${esc(t)}</div></li>`).join("")}</ol>`:`<div class="small"><span style="color:var(--bad)">You said:</span> ${esc(l.your)}</div><div class="small"><span style="color:var(--ok)">Answer:</span> ${esc(l.q.answer)}</div><div class="small muted">${l.q.why}</div>`}</div>`).join("")}</div>`:""}`);
+    document.getElementById("again").onclick=()=>{const sids=[...new Set(ses.qs.map(q=>q.sid))];ses.title==="Review missed"?(Object.keys(store.missed).length?runQuiz(shuffle(Object.keys(store.missed)).map(makeQ).filter(Boolean).slice(0,15),"Review missed"):home()):startQuiz(sids.length>3?S.map(s=>s.id):sids,ses.qs.length,ses.title)};
+    document.getElementById("hm").onclick=home;
+  };
+  show();
+}
+
+/* ---------- RUN THE STATION ---------- */
+function runStation(sid){
+  const s=byId[sid],r={k:0,miss:[],first:0,wrong:false,t0:Date.now()};
+  const limit=s.min*60;
+  const fmt=t=>`${Math.floor(t/60)}:${String(t%60).padStart(2,"0")}`;
+  const draw=()=>{
+    if(r.k>=s.steps.length)return finish();
+    const correct=s.steps[r.k];
+    const others=s.steps.filter((x,j)=>j!==r.k&&x!==correct);
+    // favour nearby steps as distractors so it's a real test of order
+    const near=others.filter(x=>Math.abs(s.steps.indexOf(x)-r.k)<=4);
+    const dis=[...new Set([...pick(near,2),...pick(others,3)])].slice(0,3);
+    const opts=shuffle([correct,...dis]);
+    r.wrong=false;
+    const lastNote=r.k>0&&s.notes[r.k-1]?`<div class="note">${esc(s.notes[r.k-1])}</div>`:"";
+    view(`<div class="card"><div class="row" style="justify-content:space-between"><div><span class="chip red">Run the station</span><h3 style="margin-top:8px">${esc(s.short)}</h3></div>
+      <div style="text-align:right"><div class="timer" id="tm">0:00</div><div class="small muted">limit ${s.min}:00</div></div></div>
+      <div class="prog"><i style="width:${100*r.k/s.steps.length}%"></i></div>
+      <div class="small muted">Step ${r.k+1} of ${s.steps.length}</div>
+      ${r.k?`<details style="margin-top:8px"><summary class="small">Done so far (${r.k})</summary><ol class="sheet">${s.steps.slice(0,r.k).map(t=>`<li class="done"><div>${esc(t)}</div></li>`).join("")}</ol></details>`:""}
+      ${lastNote}
+      <div class="q">${r.k?"What do you do next?":"The examiner says “Begin.” What do you do first?"}</div>
+      <div class="opts">${opts.map((o,k)=>`<button class="opt" data-k="${k}"><span class="k">${KEYS[k]}</span><span>${esc(o)}</span></button>`).join("")}</div>
+      <div id="fb"></div></div>`);
+    tick();timerId=setInterval(tick,1000);
+    const btns=[...app.querySelectorAll(".opt")];
+    const choose=k=>{
+      const b=btns[k];if(b.disabled)return;
+      if(opts[k]===correct){
+        if(!r.wrong)r.first++;b.classList.add("ok");btns.forEach(x=>x.disabled=true);
+        document.getElementById("fb").innerHTML=`<div class="fb ok"><strong>${r.wrong?"That's it.":"Correct."}</strong>${s.notes[r.k]?"Listen for the examiner…":"Keep going."}</div>`;
+        r.k++;setTimeout(draw,s.notes[r.k-1]?900:550);
+      }else{
+        b.classList.add("bad");b.disabled=true;
+        if(!r.wrong){r.wrong=true;r.miss.push({step:r.k,chose:opts[k]})}
+        const j=s.steps.indexOf(opts[k]);
+        document.getElementById("fb").innerHTML=`<div class="fb bad"><strong>Not yet.</strong>${j<r.k?"You already did that step.":`That's step ${j+1} — it comes later. You're on step ${r.k+1}.`} Try again.</div>`;
+      }
+    };
+    btns.forEach((b,k)=>b.onclick=()=>choose(k));
+    keyHandler=e=>{const k="1234abcd".indexOf(e.key.toLowerCase())%4;if(k>=0&&k<btns.length)choose(k)};
+  };
+  const tick=()=>{const t=Math.floor((Date.now()-r.t0)/1000),el=document.getElementById("tm");if(el){el.textContent=fmt(t);el.classList.toggle("over",t>limit)}};
+  const finish=()=>{
+    const t=Math.floor((Date.now()-r.t0)/1000),p=pct(r.first,s.steps.length);
+    record(sid,null,p>=80);if(store.best[sid]==null||p>store.best[sid])store.best[sid]=p;save();
+    view(`<div class="card" style="text-align:center"><span class="chip red">${esc(s.short)}</span><div class="big" style="margin-top:10px">${p}%</div>
+      <p class="cond" style="font-size:22px;margin:4px 0">${r.first} of ${s.steps.length} steps right on the first try</p>
+      <p class="muted">Time: ${fmt(t)} of ${s.min}:00${t>limit?" — over the limit. Speed comes from knowing the order cold.":""}</p>
+      <div class="row" style="justify-content:center"><button class="btn red" id="again">Run it again</button><button class="btn" id="qz">Quiz this station</button><button class="btn" id="hm">Home</button></div></div>
+      ${r.miss.length?`<div class="card"><h3>Steps you hesitated on</h3>${r.miss.map(m=>`<div class="miss"><div class="small muted">Step ${m.step+1}</div><div style="font-weight:600">${esc(s.steps[m.step])}</div><div class="small"><span style="color:var(--bad)">You first picked:</span> ${esc(m.chose)}</div></div>`).join("")}</div>`:""}
+      <div class="card"><h3>Don't forget the critical criteria</h3><p class="small muted" style="margin-top:-4px">Getting the order right isn't enough — any of these fails the station on the real exam.</p><ul class="crit">${s.critical.map(c=>`<li>${esc(c)}</li>`).join("")}</ul></div>`);
+    document.getElementById("again").onclick=()=>runStation(sid);
+    document.getElementById("qz").onclick=()=>startQuiz([sid],10,s.short);
+    document.getElementById("hm").onclick=home;
+  };
+  draw();
+}
+
+/* ---------- PATIENT SCENARIOS ----------
+   Each decision: [sheet section, what the examiner reveals, question, correct, wrong, wrong, wrong, why, wrongCanBeCritical]
+   "GCS" = auto Glasgow Coma Scale question, "HX" = auto history-gap question, "RE" = reassessment question. */
+const HXK=[["O","Onset"],["P","Provocation"],["Q","Quality"],["R","Radiation"],["S","Severity"],["T","Time"],["A","Allergies"],["M","Medications"],["H","Past pertinent history"],["L","Last oral intake"],["E","Events leading to the illness"]];
+const EYE=["","No eye opening","Opens eyes to pain","Opens eyes to voice","Opens eyes spontaneously"],VERB=["","No verbal response","Incomprehensible sounds","Inappropriate words","Confused","Oriented"],MOT=["","No motor response","Extension to pain","Abnormal flexion to pain","Withdraws from pain","Localizes pain","Obeys commands"];
+const SC=[
+{id:"t1",type:"trauma",title:"Car vs. pole",who:"him",dispatch:"Single-car crash. A 34-year-old male driver hit a utility pole at about 40 mph.",scene:"The fire department has the scene secured. The windshield is starred and the steering wheel is bent. He was not wearing a seat belt.",
+gcs:[3,4,6,"Opens his eyes when you speak to him","Answers, but is confused about where he is","Squeezes your hand when asked"],
+d:[["Scene size-up · Spine","Starred windshield, bent steering wheel, unrestrained driver.","Based on the mechanism of injury, what do you do about his spine?","Have your partner take manual stabilization of the head right away","Wait until the secondary assessment to decide","Ask him to move his neck to see if it hurts","Nothing — he's talking, so his spine is fine","A high-speed crash with a starred windshield is a significant mechanism. Failing to provide spinal protection when indicated is a critical criterion.",true],
+["Primary survey · Airway","You hear gurgling. There is blood in his mouth.","What do you do for his airway?","Suction the mouth and oropharynx (using a jaw-thrust, not head-tilt)","Insert an OPA right away without suctioning","Tilt his head back hard to open the airway","Move on — gurgling is normal after a crash","Gurgling means fluid in the airway: suction it. Use a jaw-thrust because of the spine concern. Failing to manage an airway problem is a critical criterion.",true],
+["Primary survey · Breathing","Respirations 28, shallow but with good chest rise. No obvious chest injury.","What breathing care does he need?","High-concentration oxygen by non-rebreather","Nasal cannula at 2 L/min","No oxygen until you get vital signs","Have him breathe into a paper bag","Failure to voice and ultimately provide high-concentration oxygen is a critical criterion on her Trauma sheet.",true],
+["Primary survey · Circulation","Radial pulse 118 and weak. Skin pale, cool and moist. No major external bleeding.","What do his pulse and skin tell you, and what do you do?","Signs of shock — start shock management (position him properly, keep him warm)","He's just nervous — no action needed","Give him something to drink","Sit him upright so he's comfortable","A fast, weak pulse with pale, cool, moist skin means hypoperfusion. Initiating shock management is its own point under Circulation.",true],
+"GCS",
+["Transport decision","GCS 13, signs of shock, significant mechanism.","What's your treatment/transport decision?","High priority — immediate transport; continue the assessment en route","Low priority — finish the full exam on scene first","Wait to see if he feels better, then decide","Let him refuse since he's talking","Shock plus a significant mechanism makes him high priority. Failing to tell immediate transport from continued on-scene care is a critical criterion.",true],
+["Secondary · Abdomen/pelvis","When you gently press on his pelvis, it shifts and he cries out.","What do you do?","Stop pressing on it, stabilize the pelvis per protocol, and keep treating for shock","Rock the pelvis again to confirm","Have him stand up to test it","Ignore it — pelvic injuries aren't serious","An unstable pelvis can hide major bleeding. Don't recheck it; stabilize per protocol and keep managing shock.",false],
+"RE"],stable:false},
+
+{id:"t2",type:"trauma",title:"Fall from a ladder",who:"him",dispatch:"A 52-year-old roofer fell about 15 feet from a ladder onto concrete.",scene:"The scene is safe. He's lying on his back, alert, with severe low-back pain and tingling in both legs.",
+gcs:[4,5,6,"Eyes open and looking at you","Answers questions correctly","Follows your commands"],
+d:[["Scene size-up · Spine","15-foot fall onto concrete; back pain and tingling legs.","When should spinal stabilization start?","Immediately — direct manual stabilization of the head before anything else hands-on","After the secondary assessment","Only if he loses all feeling","Once he's in the ambulance","A significant fall plus nerve symptoms. Failing to provide spinal protection when indicated is a critical criterion.",true],
+["Primary survey · Airway","He's talking to you in full sentences.","What does his airway need?","Nothing beyond assessment — he's talking clearly, so it's open","Insert an OPA","Suction his mouth","Hyperextend his neck to open it","A patient talking clearly has an open airway. An OPA in an awake patient would cause gagging — a dangerous intervention.",true],
+["Primary survey · Breathing","Respirations 20 and regular, with good chest rise.","What oxygen do you give?","High-concentration oxygen by non-rebreather","None — his breathing is normal","Ventilate him with a BVM","Nasal cannula at 1 L/min","Even with normal breathing, her Trauma sheet expects you to voice and provide high-concentration oxygen.",true],
+["Primary survey · Circulation","Radial pulse 88 and strong. Skin warm, dry, normal color. No bleeding.","What do you do with these findings?","Note them as normal and move on to the priority decision","Apply tourniquets to both legs","Start CPR","Skip circulation since he's alert","Normal pulse and skin: say what you found and keep moving. Every check you verbalize earns its point.",false],
+"GCS",
+["Transport decision","GCS 15, normal pulse and skin — but a 15-foot fall with new tingling in his legs.","What's your decision?","High priority — immediate transport with full spinal immobilization","Low priority, because his GCS is 15","Have him walk to the stretcher","Let his coworkers drive him","A normal GCS doesn't cancel a significant mechanism and new nerve symptoms. Failing to differentiate the need for transport is critical.",true],
+["Secondary · Lower extremities","Both legs feel like pins and needles. He can wiggle his toes, but his push against your hands is weak.","What's the right move?","Check motor, sensory and circulation in each leg, finish immobilization, then recheck","Have him stand to test his strength","Massage his legs to bring the feeling back","Skip the legs since he can wiggle his toes","The sheet gives a point per leg for motor, sensory and circulation. Document it and recheck after immobilizing.",false],
+"RE"],stable:false},
+
+{id:"t3",type:"trauma",title:"Stabbing outside a bar",who:"him",dispatch:"Reported stabbing outside a bar. Police are on the way but not there yet.",scene:"From the ambulance you see a crowd shouting around a man lying on the sidewalk.",
+gcs:[4,5,6,"Eyes open","Tells you his name, where he is and what happened","Follows commands"],
+d:[["Scene size-up · Safety","Police haven't arrived. The crowd is still angry.","What do you do first?","Stage at a safe distance until police say the scene is secure","Rush in — he could be bleeding out","Ask the crowd who did it","Park right beside him with your lights off","Determining scene safety is a critical criterion. You can't help him if you become a patient too.",true],
+["Primary survey · Breathing","Police secure the scene. The 24-year-old is awake. Respirations 30 and labored, with a bubbling, sucking sound from a stab wound on his left chest.","What do you do?","Seal the wound with an occlusive dressing and give high-concentration oxygen","Pack the wound with gauze","Leave it until the secondary assessment","Cut off his shirt and leave the wound open to air","An open chest wound is managed in the primary survey (it's a Breathing point). Watch for worsening breathing after sealing and follow your protocol.",true],
+["Primary survey · Circulation","Radial pulse 124 and weak. Skin pale and sweaty. Only a little blood around the wound.","What does this tell you?","He's in shock — start shock management","He's fine since there's little blood outside","He just needs to calm down","Give him water","Little outside blood doesn't mean little blood loss — chest wounds bleed inside. Failing to manage shock is a critical criterion.",true],
+"GCS",
+["Transport decision","Penetrating chest wound with signs of shock.","What's your decision?","High priority — immediate transport","Low priority — he's talking","Finish the whole secondary on scene first","Wait for police to finish questioning him","Penetrating chest trauma with shock needs immediate transport.",true],
+["Secondary · Posterior thorax","You're finishing your assessment en route.","Why must you check his back?","Stab wounds can have more wounds on the back that you'd otherwise miss","To look for a rash","It's optional with chest wounds","To see if he can sit up alone","Posterior thorax, lumbar and buttocks are 2 points on her sheet — and that's where hidden wounds turn up.",false],
+"RE"],stable:false},
+
+{id:"t4",type:"trauma",title:"Arm through a glass door",who:"her",dispatch:"A 29-year-old woman put her arm through a glass door.",scene:"The scene is safe. She's sitting on the floor pressing a blood-soaked towel against her forearm.",
+gcs:[4,5,6,"Eyes open","Talking clearly and knows what happened","Follows commands"],
+d:[["Primary survey · Breathing","She's crying and talking. Respirations 26.","What oxygen do you give?","High-concentration oxygen by non-rebreather","None — she's talking","BVM ventilation","Nasal cannula at 1 L/min","Trauma patients get high-concentration oxygen; failing to provide it is a critical criterion.",true],
+["Primary survey · Circulation","When you lift the towel, bright red blood spurts from the wound.","What's your first bleeding-control step?","Apply firm, direct pressure to the wound","Elevate the arm and press the brachial pressure point","Let it bleed to clean the wound","Wait to take vital signs first","Direct pressure first. The 2011 guide says elevation and pressure points are not effective.",true],
+["Primary survey · Circulation","Blood keeps soaking through despite firm direct pressure.","What now?","Apply a tourniquet above the wound (not over a joint)","Add more gauze and keep waiting","Use a pressure point","Remove the soaked dressing to look","When direct pressure fails, apply a tourniquet. Delaying it is a critical item.",true],
+["Primary survey · Circulation","The bleeding stops. She's restless; skin cool and clammy; pulse 118.","What do you do?","Shock management — position her properly and keep her warm","Nothing — the bleeding is controlled","Sit her up and give her juice","Have her walk to the ambulance","Controlling the bleed doesn't undo the blood loss. Treat for shock.",true],
+"GCS",
+["Transport decision","Arterial bleeding controlled by tourniquet; signs of shock.","What's your decision?","High priority — immediate transport","Low priority now that the bleeding stopped","Wait 15 minutes to watch her","Let her drive herself","Shock means immediate transport.",true],
+["Managing injuries","She asks you to loosen the tourniquet because it hurts.","What do you do?","Leave it on, note the time it was applied, and tell the hospital","Loosen it for a minute","Take it off now that bleeding stopped","Loosen it every 10 minutes","Loosening a tourniquet restarts the bleeding — a dangerous intervention.",true],
+"RE"],stable:false},
+
+{id:"t5",type:"trauma",title:"Struck with a bat",who:"him",dispatch:"Assault. A 19-year-old male was hit in the head with a baseball bat. Police are on scene and it's secure.",scene:"He's lying on his back and doesn't open his eyes when you speak to him.",
+gcs:[2,2,4,"Opens his eyes only when you pinch his shoulder","Moans — no words","Pulls his hand away from the pinch"],
+d:[["Scene size-up · Spine","Blunt blow to the head; he's unresponsive to your voice.","What about his spine?","Manual stabilization of the head right away","Not needed for a head injury","Roll him over first to look at his back","Sit him up to see if he wakes","A significant blow to the head means possible neck injury. Spinal protection is a critical criterion.",true],
+["Primary survey · Airway","You hear snoring respirations.","What do you do?","Open the airway with a jaw-thrust, suction as needed, and insert an OPA if he has no gag reflex","Head-tilt chin-lift with full neck extension","Leave it — snoring is normal","Give him water","Snoring means his tongue is blocking the airway. Use a jaw-thrust because of the spine concern.",true],
+["Primary survey · Breathing","Respirations 8 per minute and shallow.","What breathing care does he need?","Assist ventilations with a BVM attached to high-flow oxygen","Non-rebreather mask alone","Nasal cannula","Recheck in 5 minutes","8 shallow breaths a minute isn't enough. A mask can't breathe for him — failing to provide adequate ventilation is a critical criterion.",true],
+"GCS",
+["Transport decision","GCS 8 with inadequate breathing.","What's your decision?","High priority — immediate transport","Low priority — he may just be drunk","Finish the full exam on scene first","Wait for him to wake up","A GCS of 8 with a breathing problem is a critical patient.",true],
+["Secondary · Head","Clear, watery fluid mixed with blood is leaking from his right ear.","What do you do?","Cover the ear loosely with sterile gauze — don't block the flow","Pack the ear to stop it","Ignore it","Rinse the ear with water","Fluid from the ear after a head injury may be leaking from around the brain. Cover it loosely; never pack it.",false],
+"RE"],stable:false},
+
+{id:"t6",type:"trauma",title:"Pedestrian struck",who:"her",dispatch:"A 45-year-old woman was hit by a car at about 25 mph and thrown to the side of the road.",scene:"Police are blocking traffic and the scene is safe.",
+gcs:[4,4,6,"Eyes open","Confused — keeps asking what happened","Follows commands"],
+d:[["Scene size-up · Spine","Pedestrian struck and thrown.","What about her spine?","Manual stabilization of the head right away","Not needed — she's moving her arms","Have her sit up","Check later in the secondary","Pedestrian struck at speed is a significant mechanism. Spinal protection is a critical criterion.",true],
+["Primary survey · Breathing","Respirations 32 and shallow. A section of her right chest moves inward when she breathes in.","What breathing care does she need?","Assist ventilations with a BVM and high-flow oxygen, and stabilize the loose chest section with a bulky dressing","Nasal cannula only","Wrap tape tightly around her whole chest","Leave it for the secondary assessment","A loose chest segment that moves backward (a flail segment) makes breathing ineffective. Manage it in the primary survey.",true],
+["Primary survey · Circulation","Radial pulse 112, weak. Skin pale and cool. Her right thigh is swollen and deformed, with no open wound.","What do you do?","Start shock management — a broken thigh bone can hide major blood loss","No concern — there's no outside bleeding","Put a tourniquet on the thigh","Have her bend the leg to check it","A femur fracture can lose a lot of blood inside the thigh. Treat for shock.",true],
+"GCS",
+["Transport decision","GCS 14, breathing problem, signs of shock.","What's your decision?","High priority — immediate transport","Low priority — her GCS is nearly normal","Splint everything on scene first, then decide","Wait for family","Breathing problems plus shock make her high priority.",true],
+["Secondary · Lower extremities","Right thigh deformed; her foot is warm with a pulse.","How do you manage the leg?","Check motor/sensory/circulation, splint per protocol (joints above and below), then recheck","Straighten it forcefully","Skip it — the foot has a pulse","Have her try to walk","Manage secondary injuries appropriately and reassess motor, sensory and circulation after splinting.",false],
+"RE"],stable:false},
+
+{id:"m1",type:"medical",title:"Chest pain",who:"him",dispatch:"58-year-old man with chest pain at home.",scene:"The scene is safe. He's sitting on the couch, pale and sweaty, rubbing his chest.",
+hx:{O:"Started 30 minutes ago while watching TV",P:"Nothing makes it better or worse",Q:"Crushing — like an elephant on my chest",R:"Goes into my left arm and jaw",S:"8 out of 10",T:"Constant for 30 minutes",A:"No allergies",M:"Blood pressure pill; nitroglycerin his doctor prescribed",H:"High blood pressure, high cholesterol",L:"Dinner about 2 hours ago",E:"Sitting and resting; no injury"},
+d:[["Primary survey · Airway and breathing","He's speaking in full sentences. Respirations 22, slightly labored.","What do you do for airway and breathing?","Assess, then give appropriate oxygen per protocol and say so","Assist ventilations with a BVM","No oxygen — medical patients don't need it","Insert an OPA","Initiating appropriate oxygen therapy is a point, and failing to provide it is a critical criterion. He's breathing adequately, so a BVM isn't needed.",true],
+["Primary survey · Circulation","Radial pulse 96 and irregular. Skin pale, cool and sweaty. No bleeding.","What do the skin findings suggest?","Poor perfusion — treat him as high priority","He's just warm from the room","Normal findings","Dehydration from exercise","Pale, cool, sweaty skin with chest pain means his heart may not be pumping well.",false],
+["Transport decision","Crushing chest pain with poor perfusion.","What's your decision?","High priority — prompt transport; continue history and treatment en route","Low priority — finish everything on scene","Have him drive to his doctor tomorrow","Wait for the pain to pass","Possible heart attack is high priority. Failing to differentiate the need for transport is critical.",true],
+"HX",
+["Secondary assessment","History points to his heart.","Which body system should your secondary focus on?","Cardiovascular (and pulmonary)","Musculoskeletal","Reproductive","Integumentary only","Her sheet gives 5 points for assessing the affected body part/system.",false],
+["Field impression","BP 148/92, pulse 96 irregular, respirations 22.","What's your field impression?","Possible cardiac chest pain (heart attack)","Anxiety attack","Indigestion only","Asthma attack","Stating a field impression is 1 point.",false],
+["Interventions","He hasn't taken his nitroglycerin today. BP is 148/92.","What intervention do you verbalize?","Contact medical direction (or follow standing orders) to give aspirin and help him take his prescribed nitroglycerin","Give nitroglycerin from your own supply without checking his BP","Give him water and wait","Have him walk to the ambulance","EMT medications need medical direction or standing orders. Nitroglycerin also needs an adequate BP (commonly above 100 systolic) and no recent erectile-dysfunction drugs.",true],
+"RE"],stable:false},
+
+{id:"m2",type:"medical",title:"Can't catch her breath",who:"her",dispatch:"22-year-old woman having trouble breathing.",scene:"The scene is safe. She's sitting upright, leaning forward on her knees, and can only say 2–3 words at a time.",
+hx:{O:"Started an hour ago after cleaning a dusty closet",P:"Worse lying down; nothing helps",Q:"Tight chest — can't get air out",R:"Doesn't spread anywhere",S:"9 out of 10",T:"Getting worse over the last hour",A:"Penicillin",M:"Albuterol inhaler — used it twice, didn't help",H:"Asthma since childhood; hospitalized once",L:"Breakfast this morning",E:"Dusting the closet"},
+d:[["Primary survey · Airway and breathing","Respirations 30 and labored with loud wheezing. She's still moving air.","What breathing care does she need?","High-concentration oxygen, and be ready to assist ventilations if she tires","No oxygen — she can talk","Nasal cannula at 1 L/min","Lay her flat to rest","Severe respiratory distress needs oxygen now. Watch for tiring — a drop in rate or effort can mean she's about to stop breathing.",true],
+["Primary survey · Circulation","Pulse 124. Skin pale and sweaty.","How should she be positioned?","Let her stay sitting upright — position of comfort","Flat on her back with legs raised","Face down","Have her walk to the ambulance","Sitting up makes breathing easier. Lying flat can make it worse.",false],
+["Transport decision","Can only speak 2–3 words; inhaler didn't help.","What's your decision?","High priority — immediate transport","Low priority — she has asthma all the time","Wait for the inhaler to kick in","Let her rest at home","Unable to speak full sentences is a sign of severe distress.",true],
+"HX",
+["Secondary assessment","Wheezing, tight chest, asthma history.","Which body system should your secondary focus on?","Pulmonary","Musculoskeletal","Reproductive","GI/GU","Assess the affected system: lung sounds, effort, skin color.",false],
+["Field impression","BP 132/84, pulse 124, respirations 30 and labored.","What's your field impression?","Severe asthma attack (respiratory distress)","Heart attack","Panic attack only","Allergic skin rash","Stating a field impression is 1 point.",false],
+["Interventions","Her prescribed albuterol inhaler is with her and not expired.","What do you verbalize?","With medical direction/standing orders, help her use her own inhaler, then reassess her breathing","Give her a friend's inhaler","Hold the inhaler — she already used it","Have her breathe into a paper bag","EMTs can assist with a patient's own prescribed inhaler under medical direction. Always reassess after.",true],
+"RE"],stable:false},
+
+{id:"m3",type:"medical",title:"Confused at work",who:"him",dispatch:"45-year-old man acting confused at work.",scene:"The scene is safe. A coworker says he's diabetic. He's sweaty and slurring his words.",
+hx:{O:"Coworker noticed it about 20 minutes ago",P:"Nothing seems to change it",Q:"He says he feels shaky and weird",R:"No pain to spread",S:"Coworker says it's getting worse",T:"Gradual over 20 minutes",A:"None known",M:"Insulin this morning",H:"Type 1 diabetes",L:"Skipped lunch; last ate at 6 a.m.",E:"Took insulin, then worked through lunch"},
+d:[["Primary survey · Level of consciousness","His eyes are closed until you speak to him. Then he answers, but he's confused.","Using AVPU, what's his level of consciousness?","V — responds to verbal","A — alert","P — responds to pain","U — unresponsive","His eyes open only when you talk to him, so he's V. Her Medical sheet scores responsiveness with AVPU.",false],
+["Primary survey · Airway and breathing","Airway open; he's swallowing normally. Respirations 18, adequate.","What do you do?","Assess, then give appropriate oxygen per protocol","Ventilate him with a BVM","Insert an OPA","Nothing — skip oxygen for diabetics","Breathing is adequate, so no BVM. Voice appropriate oxygen therapy — it's a point and a critical criterion.",true],
+["Transport decision","Altered mental status; pulse 110; skin cool and clammy.","What's your decision?","High priority — prompt transport","Low priority — he's just tired","Let him finish his shift","Have a coworker drive him home","Any altered mental status is high priority.",true],
+"HX",
+["Secondary assessment","Confused, diabetic, skipped a meal.","Which body system should your secondary focus on?","Neurological (mental status), plus checking for anything else going on","Reproductive","Musculoskeletal only","Integumentary only","Check mental status, speech, pupils and movement.",false],
+["Field impression","BP 128/80, pulse 110, respirations 18.","What's your field impression?","Low blood sugar (diabetic emergency)","Drunk","Stroke — nothing else could cause this","Heart attack","Insulin plus no food is the classic setup for low blood sugar.",false],
+["Interventions","He can swallow and follow commands.","What do you verbalize?","With medical direction/standing orders, give oral glucose, then reassess his mental status","Give him another dose of his insulin","Give oral glucose even if he becomes unresponsive","Nothing until the hospital","Oral glucose only for patients who can swallow and protect their airway. Giving it to an unresponsive patient is dangerous.",true],
+"RE"],stable:false},
+
+{id:"m4",type:"medical",title:"Bee sting at a picnic",who:"her",dispatch:"30-year-old woman stung by a bee at a picnic.",scene:"The scene is safe. She has hives on her arms and neck and her voice sounds hoarse.",
+hx:{O:"Within 5 minutes of the sting",P:"Nothing helps",Q:"Throat feels tight and itchy",R:"Itching all over",S:"Breathing trouble 8 out of 10",T:"Getting worse over 10 minutes",A:"Bee stings — bad reaction before",M:"Prescribed epinephrine auto-injector",H:"Severe bee allergy",L:"Sandwich 30 minutes ago",E:"Stung on the hand while eating"},
+d:[["Primary survey · Airway and breathing","Hoarse voice, wheezing, respirations 28.","What breathing care does she need?","High-concentration oxygen","Nasal cannula at 1 L/min","No oxygen — it's just an allergy","Have her lie flat","A hoarse voice and wheezing mean her airway is swelling. Give high-concentration oxygen and watch the airway closely.",true],
+["Primary survey · Circulation","Pulse 120 and weak. Skin flushed. BP 84/50.","What does this mean?","She's in shock from a severe allergic reaction — high priority","Normal for someone who's scared","She's just overheated","Nothing until you get a second BP","Low BP with a fast, weak pulse after a sting = anaphylactic shock.",false],
+["Transport decision","Airway swelling, wheezing, low blood pressure.","What's your decision?","High priority — immediate transport","Low priority — hives are common","Wait for an antihistamine to work","Have her go to urgent care","This is life-threatening.",true],
+"HX",
+["Secondary assessment","Hives, wheezing, low blood pressure.","Which systems should your secondary focus on?","Integumentary, pulmonary and cardiovascular — it's affecting several","Musculoskeletal only","Reproductive","Psychological/social only","Anaphylaxis hits several systems at once.",false],
+["Field impression","BP 84/50, pulse 120, respirations 28 with wheezing.","What's your field impression?","Anaphylaxis (severe allergic reaction)","Mild skin rash","Asthma only","Panic attack","Stating a field impression is 1 point.",false],
+["Interventions","Her own prescribed epinephrine auto-injector is in her bag and not expired.","What do you verbalize?","With medical direction/standing orders, help her use her own epinephrine auto-injector in the outer thigh, then reassess","Give antihistamine pills only and wait","Use a friend's auto-injector without checking it","Wait until the hospital","Epinephrine is the treatment for anaphylaxis. Reassess breathing and BP after.",true],
+"RE"],stable:false},
+
+{id:"m5",type:"medical",title:"Slurred speech",who:"her",dispatch:"72-year-old woman with slurred speech.",scene:"The scene is safe. Her husband says she was fine at breakfast 40 minutes ago. Her right arm is weak and the right side of her face droops.",
+hx:{O:"Suddenly, while eating breakfast",P:"Nothing changes it",Q:"Can't move her right arm well; words come out wrong",R:"Right arm and right side of her face",S:"Can't lift her right arm",T:"Last seen normal 40 minutes ago",A:"Sulfa drugs",M:"Blood pressure medicine",H:"High blood pressure, irregular heartbeat",L:"Toast at breakfast 40 minutes ago",E:"Sitting at the table when it started"},
+d:[["Primary survey · Airway and breathing","She's drooling a little, but the airway is open. Respirations 18.","What do you do?","Keep the airway clear (suction ready), assess, and give appropriate oxygen per protocol","Give her water to clear her mouth","Insert an OPA while she's awake","Ignore the drooling","Trouble swallowing is common in stroke. Nothing by mouth, and have suction ready.",true],
+["Transport decision","Sudden one-sided weakness and slurred speech that began 40 minutes ago.","What's your decision?","High priority — rapid transport to a stroke-capable hospital; note the time she was last seen normal","Low priority — she's awake","Wait 30 minutes to see if it goes away","Drive her to her family doctor","Stroke treatment depends on time. The time last seen normal is key information for the hospital.",true],
+"HX",
+["Secondary assessment","Facial droop, arm weakness, slurred speech.","Which body system should your secondary focus on?","Neurological","GI/GU","Integumentary","Reproductive","Check speech, facial droop, arm drift and grip strength.",false],
+["Field impression","BP 182/100, pulse 88 irregular, respirations 18.","What's your field impression?","Possible stroke","Low blood sugar — it can't be anything else","Heart attack","Drunk","Low blood sugar can look like a stroke — check glucose if your protocol allows — but these findings point to stroke.",false],
+["Interventions","BP 182/100.","What do you verbalize?","Nothing by mouth, protect her weak arm, position of comfort, notify the hospital early","Give her aspirin","Give nitroglycerin to lower her BP","Give oral glucose to every stroke patient","EMTs don't give aspirin or nitroglycerin for stroke — a stroke can be bleeding in the brain.",true],
+"RE"],stable:false},
+
+{id:"m6",type:"medical",title:"Vomiting and dizzy",who:"him",dispatch:"60-year-old man vomiting and dizzy.",scene:"The scene is safe. A bucket nearby has dark vomit that looks like coffee grounds. He's pale and lying on the couch.",
+hx:{O:"Started this morning",P:"Dizzy when he stands up",Q:"Burning stomach pain",R:"Stays in his upper belly",S:"6 out of 10",T:"Vomited three times since 7 a.m.",A:"None",M:"Ibuprofen every day for back pain",H:"Stomach ulcer",L:"Coffee at 6 a.m.",E:"Woke up feeling sick"},
+d:[["Primary survey · Airway","He starts to vomit again.","What do you do?","Roll him onto his side and suction as needed to protect his airway","Keep him flat on his back","Give him water","Insert an OPA while he's vomiting","Protecting the airway from vomit comes first. Failing to manage an airway problem is critical.",true],
+["Primary survey · Circulation","Pulse 120 and weak. Skin pale, cool and moist.","What do you do?","Shock management — oxygen, position, keep him warm","Nothing — vomiting makes people pale","Give him something to eat","Sit him up and have him stand to check dizziness","Coffee-ground vomit with shock signs means bleeding in the stomach.",true],
+["Transport decision","Signs of shock and possible internal bleeding.","What's your decision?","High priority — immediate transport","Low priority — probably a stomach bug","Have him rest and call back","Drive him to a pharmacy","Shock means immediate transport.",true],
+"HX",
+["Secondary assessment","Upper belly pain and coffee-ground vomit.","Which body system should your secondary focus on?","GI/GU (abdomen), plus watching his circulation","Neurological only","Reproductive","Musculoskeletal","Assess the abdomen: tenderness, rigidity, distension.",false],
+["Field impression","BP 92/60, pulse 120, respirations 24.","What's your field impression?","Possible stomach (GI) bleed with shock","Food poisoning","Heart attack","Anxiety","Daily ibuprofen and an ulcer history raise the risk of a stomach bleed.",false],
+["Interventions","He asks for something for his stomach.","What do you verbalize?","Treat for shock: oxygen, keep him warm, nothing by mouth, suction ready, transport","Give him an antacid","Have him walk to the ambulance","Give him crackers to settle his stomach","Nothing by mouth for a patient who may need surgery and is vomiting.",true],
+"RE"],stable:false}
+];
+
+function gcsQ(sc){
+  const [e,v,m,de,dv,dm]=sc.gcs,t=e+v+m;
+  const opts=new Set([t]);for(const d of shuffle([-3,-2,-1,1,2,3])){const x=t+d;if(x>=3&&x<=15)opts.add(x);if(opts.size===4)break}
+  return{sec:"Transport decision · GCS",find:`Eyes: ${de}. Verbal: ${dv}. Motor: ${dm}.`,q:"Calculate the Glasgow Coma Scale score.",
+    a:String(t),opts:shuffle([...opts].map(String)),why:`Eyes ${e} (${EYE[e].toLowerCase()}) + Verbal ${v} (${VERB[v].toLowerCase()}) + Motor ${m} (${MOT[m].toLowerCase()}) = ${t}. Her Trauma sheet bases the priority decision on the calculated GCS.`,crit:false};
+}
+function hxQ(sc){
+  const miss=HXK[Math.random()*HXK.length|0];
+  const asked=HXK.filter(k=>k!==miss);
+  const find=`<ul class="hx">${asked.map(([k,l])=>`<li><b>${esc(l)}:</b> ${esc(sc.hx[k])}</li>`).join("")}</ul>`;
+  return{sec:"History taking",findHtml:find,q:"Here's what you've asked so far. Which part of OPQRST/SAMPLE did you miss?",
+    a:miss[1],opts:shuffle([miss[1],...pick(asked.map(x=>x[1]),3)]),why:`You'd have learned: “${sc.hx[miss[0]]}.” Each OPQRST letter and each past-history item is 1 point on her Medical sheet.`,crit:false};
+}
+function reQ(sc){
+  return{sec:"Reassessment",find:"You're en route to the hospital.",q:`How often should you reassess ${sc.who}?`,
+    a:sc.stable?"About every 15 minutes — stable patient":"About every 5 minutes — unstable patient",
+    opts:shuffle(["About every 5 minutes — unstable patient","About every 15 minutes — stable patient","Only once, at the hospital","Every 30 minutes"]),
+    why:"Unstable patients: about every 5 minutes. Stable: about every 15. \"Demonstrates how and when to reassess\" is a point on both sheets.",crit:false};
+}
+function buildScen(sc){
+  return sc.d.map(x=>x==="GCS"?gcsQ(sc):x==="HX"?hxQ(sc):x==="RE"?reQ(sc):
+    {sec:x[0],find:x[1],q:x[2],a:x[3],opts:shuffle(x.slice(3,7)),why:x[7],crit:x[8]});
+}
+function scenario(type){
+  let pool=SC.filter(x=>type==="any"||x.type===type);
+  if(pool.length>1)pool=pool.filter(x=>x.id!==store.lastScen);
+  const sc=pool[Math.random()*pool.length|0];store.lastScen=sc.id;save();
+  const qs=buildScen(sc),st=byId[sc.type],r={i:0,ok:0,log:[],crit:0,t0:Date.now()};
+  const label=sc.type==="trauma"?"Trauma":"Medical";
+  view(`<div class="card"><span class="chip red">Patient scenario · ${label}</span>
+    <h2 style="margin-top:10px">${esc(sc.title)}</h2>
+    <p><b>Dispatch:</b> ${esc(sc.dispatch)}</p><p class="note">${esc(sc.scene)}</p>
+    <p class="small muted">Say “BSI” and your scene size-up out loud now, as you would at the station. Then make the calls the examiner is grading. ${sc.type==="trauma"?"Real time limit: 10 minutes to call for transport.":"Real time limit: 15 minutes to call for transport."}</p>
+    <div class="row" style="justify-content:flex-end"><button class="btn red" id="go">Begin</button></div></div>`);
+  document.getElementById("go").onclick=step;
+  function step(){
+    if(r.i>=qs.length)return end();
+    const q=qs[r.i];
+    view(`<div class="row" style="justify-content:space-between"><span class="small muted">${esc(sc.title)} · decision ${r.i+1} of ${qs.length}</span><span class="small muted">${r.ok} correct</span></div>
+      <div class="prog"><i style="width:${100*r.i/qs.length}%"></i></div>
+      <div class="card"><span class="chip red">${esc(q.sec)}</span>
+      ${q.findHtml?`<div class="note">${q.findHtml}</div>`:`<div class="note">${esc(q.find)}</div>`}
+      <div class="q">${esc(q.q)}</div>
+      <div class="opts">${q.opts.map((o,k)=>`<button class="opt" data-k="${k}"><span class="k">${KEYS[k]}</span><span>${esc(o)}</span></button>`).join("")}</div>
+      <div id="fb"></div></div>`);
+    const btns=[...app.querySelectorAll(".opt")];
+    const choose=k=>{
+      if(btns[0].disabled)return;const ok=q.opts[k]===q.a;
+      btns.forEach((b,j)=>{b.disabled=true;if(q.opts[j]===q.a)b.classList.add("ok");else if(j===k)b.classList.add("bad")});
+      if(ok)r.ok++;else{r.log.push({q,your:q.opts[k]});if(q.crit)r.crit++}
+      record(sc.type,null,ok);
+      document.getElementById("fb").innerHTML=`<div class="fb ${ok?"ok":"bad"}"><strong>${ok?"Correct.":"Not quite."}</strong>${ok?"":`<div><b>Better call:</b> ${esc(q.a)}</div>`}<div>${esc(q.why)}</div>${!ok&&q.crit?`<div class="critflag">On the real exam, this mistake could fail the station.</div>`:""}</div>
+        <div class="row" style="margin-top:12px;justify-content:flex-end"><button class="btn pri" id="nx">${r.i+1<qs.length?"Next →":"See how you did"}</button></div>`;
+      const nx=document.getElementById("nx");nx.onclick=()=>{r.i++;step()};nx.focus({preventScroll:true});nx.scrollIntoView({block:"nearest",behavior:"smooth"});
+    };
+    btns.forEach((b,k)=>b.onclick=()=>choose(k));
+    keyHandler=e=>{const k="1234abcd".indexOf(e.key.toLowerCase())%4;if(k>=0&&k<btns.length)choose(k);else if(e.key==="Enter"){const n=document.getElementById("nx");if(n)n.click()}};
+  }
+  function end(){
+    const p=pct(r.ok,qs.length);
+    view(`<div class="card" style="text-align:center"><span class="chip red">${esc(sc.title)}</span><div class="big" style="margin-top:10px">${p}%</div>
+      <p class="cond" style="font-size:22px;margin:4px 0">${r.ok} of ${qs.length} calls right</p>
+      <p class="muted">${r.crit?`${r.crit} of your misses ${r.crit===1?"was a kind of mistake":"were kinds of mistakes"} that can fail the station on the real exam. Go over ${r.crit===1?"it":"them"} below.`:"No station-failing mistakes. Nice work."}</p>
+      <div class="row" style="justify-content:center"><button class="btn red" id="again">New ${label.toLowerCase()} patient</button><button class="btn" id="other">Try a ${sc.type==="trauma"?"medical":"trauma"} patient</button><button class="btn" id="hm">Home</button></div></div>
+      ${r.log.length?`<div class="card"><h3>Calls to review</h3>${r.log.map(l=>`<div class="miss"><span class="chip">${esc(l.q.sec)}</span>${l.q.crit?' <span class="chip red">Can fail the station</span>':""}<div style="font-weight:600;margin:6px 0">${esc(l.q.q)}</div><div class="small"><span style="color:var(--bad)">You said:</span> ${esc(l.your)}</div><div class="small"><span style="color:var(--ok)">Better call:</span> ${esc(l.q.a)}</div><div class="small muted">${esc(l.q.why)}</div></div>`).join("")}</div>`:""}
+      <div class="card"><h3>Also say these out loud on the real exam</h3><p class="small muted" style="margin-top:-4px">The scenario skipped them, but each is a point on her ${label} sheet.</p>
+      <ul class="crit">${(sc.type==="trauma"?["BSI precautions","Scene is safe","Mechanism of injury","Number of patients","Request additional EMS if needed","General impression","Responsiveness / level of consciousness","Chief complaint and life threats","Baseline vital signs: BP, pulse, respirations","SAMPLE history","The full head-to-toe secondary, area by area"]:["BSI precautions","Scene is safe","Nature of illness","Number of patients","Request additional help if needed","Consider spinal stabilization","General impression","Vital signs: pulse, BP, respiratory rate and quality","Accurate verbal report to the arriving EMS unit"]).map(x=>`<li>${x}</li>`).join("")}</ul></div>`);
+    document.getElementById("again").onclick=()=>scenario(sc.type);
+    document.getElementById("other").onclick=()=>scenario(sc.type==="trauma"?"medical":"trauma");
+    document.getElementById("hm").onclick=home;
+  }
+}
+
+
+homeBtn.onclick=home;
+document.addEventListener("keydown",e=>{if(keyHandler&&!e.target.matches("input"))keyHandler(e)});
+home();
+}
+</script>
+</body>
+</html>
