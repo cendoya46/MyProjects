@@ -149,6 +149,7 @@
   .stamp-trip    { background: rgba(61,122,176,0.10); color: var(--steel2); }
   .stamp-build   { background: rgba(212,130,10,0.12); color: var(--amber); }
   .stamp-audio   { background: rgba(120,80,160,0.10); color: #7850A0; }
+  .stamp-study   { background: rgba(200,16,46,0.10); color: #A30D25; }
 
   .card-icon {
     height: 80px;
@@ -252,7 +253,7 @@
     <p class="hero-desc">A collection of practical, offline-first apps built for field work, travel planning, construction, and beyond. Single-file HTML — no installs, no accounts, works everywhere.</p>
     <div class="hero-stats">
       <div class="stat-item">
-        <div class="stat-num">4</div>
+        <div class="stat-num">5</div>
         <div class="stat-label">Active Projects</div>
       </div>
       <div class="stat-item">
@@ -274,6 +275,7 @@
   <button class="nav-cat" onclick="filterCards('trip', this)">Trip & Travel</button>
   <button class="nav-cat" onclick="filterCards('build', this)">Building</button>
   <button class="nav-cat" onclick="filterCards('audio', this)">Audio</button>
+  <button class="nav-cat" onclick="filterCards('study', this)">Study</button>
 </div>
 
 <!-- ── MAIN ── -->
@@ -361,6 +363,26 @@
         </div>
         <div class="card-footer">
           <span class="card-updated"><span class="status-dot status-active"></span>2026 · Active</span>
+          <span class="card-cta">Open</span>
+        </div>
+      </div>
+    </a>
+
+    <!-- EMT Skills Trainer -->
+    <a class="project-card" href="EMTSkillsTrainer.html" data-cat="study">
+      <span class="card-stamp stamp-study">Study</span>
+      <div class="card-icon">🚑</div>
+      <div class="card-body-inner">
+        <div class="card-title">EMT Skills Trainer</div>
+        <div class="card-desc">NREMT EMT psychomotor exam practice — all 10 skill stations from the 2011 sheets, timed station run-throughs, and randomized trauma and medical patient scenarios with feedback on every call.</div>
+        <div class="card-tags">
+          <span class="tag">NREMT</span>
+          <span class="tag">Quizzes</span>
+          <span class="tag">Scenarios</span>
+          <span class="tag">Offline</span>
+        </div>
+        <div class="card-footer">
+          <span class="card-updated"><span class="status-dot status-active"></span>Nov 2026 · v1.0</span>
           <span class="card-cta">Open</span>
         </div>
       </div>
