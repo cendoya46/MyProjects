@@ -1,0 +1,10 @@
+// Cloudflare Workers settings: serve the HTML files in this repo as a static site.
+{
+  "name": "myprojects",
+  "compatibility_date": "2026-11-01",
+  "assets": {
+    "directory": "./",
+    "html_handling": "auto-trailing-slash",
+    "not_found_handling": "404-page"
+  }
+}
